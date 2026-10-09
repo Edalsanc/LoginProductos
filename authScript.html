@@ -1,0 +1,196 @@
+ <script>
+    // Referencias a los contenedores
+    const loginCard = document.getElementById('loginCard');
+    const registerCard = document.getElementById('registerCard');
+    const successCard = document.getElementById('successCard');
+
+    const alertBox = document.getElementById('alertBox');
+    const alertMessage = document.getElementById('alertMessage');
+    const alertIcon = document.getElementById('alertIcon');
+
+    // Cambiar vista activa
+    function toggleView(view) {
+      hideAlert();
+      if (view === 'register') {
+        loginCard.classList.add('hidden');
+        registerCard.classList.remove('hidden');
+        successCard.classList.add('hidden');
+      } else if (view === 'login') {
+        registerCard.classList.add('hidden');
+        loginCard.classList.remove('hidden');
+        successCard.classList.add('hidden');
+      }
+    }
+
+    // Alternar visibilidad de contraseña
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye';
+      }
+    }
+
+    // Alertas dinámicas
+    function showAlert(msg, isSuccess = false) {
+      alertBox.className = isSuccess 
+        ? 'px-5 py-3 text-sm font-medium transition-all duration-300 flex items-center justify-between bg-green-50 text-green-700 border-b border-green-200 fade-in'
+        : 'px-5 py-3 text-sm font-medium transition-all duration-300 flex items-center justify-between bg-red-50 text-red-700 border-b border-red-200 fade-in';
+      
+      alertIcon.className = isSuccess 
+        ? 'fa-solid fa-circle-check text-green-500' 
+        : 'fa-solid fa-triangle-exclamation text-red-500';
+
+      alertMessage.textContent = msg;
+      alertBox.classList.remove('hidden');
+    }
+
+    function hideAlert() {
+      alertBox.classList.add('hidden');
+    }
+
+    // Envío del Login
+    function handleLoginSubmit() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!email || !password) {
+        showAlert('Por favor, ingresa tu correo y contraseña.');
+        return;
+      }
+
+      setLoading('login', true);
+
+      // Comunicación nativa con Apps Script
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            setLoading('login', false);
+            if (response && response.success) {
+              showSuccessView(response.user);
+            } else {
+              showAlert(response ? response.message : 'Error al verificar credenciales.');
+            }
+          })
+          .withFailureHandler(function(error) {
+            setLoading('login', false);
+            showAlert('Error de conexión con el servidor: ' + error.message);
+          })
+          .handleLogin({ email: email, password: password });
+      } else {
+        // Simulación para pruebas fuera del entorno de Google
+        setTimeout(() => {
+          setLoading('login', false);
+          showSuccessView({ id: 'USR-7E2A91D0', name: 'Usuario Demo', email: email });
+        }, 1000);
+      }
+    }
+
+    // Envío del Registro
+    function handleRegisterSubmit() {
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+      if (!name || !email || !password) {
+        showAlert('Por favor, completa todos los campos.');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert('La contraseña debe tener al menos 6 caracteres.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showAlert('Las contraseñas no coinciden.');
+        return;
+      }
+
+      setLoading('register', true);
+
+      // Comunicación nativa con Apps Script
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            setLoading('register', false);
+            if (response && response.success) {
+              showSuccessView(response.user);
+            } else {
+              showAlert(response ? response.message : 'Error al crear la cuenta.');
+            }
+          })
+          .withFailureHandler(function(error) {
+            setLoading('register', false);
+            showAlert('Error al conectar con el servidor: ' + error.message);
+          })
+          .handleRegister({ name: name, email: email, password: password });
+      } else {
+        // Simulación para pruebas fuera del entorno de Google
+        setTimeout(() => {
+          setLoading('register', false);
+          showSuccessView({ id: 'USR-' + Math.random().toString(36).substring(2, 10).toUpperCase(), name: name, email: email });
+        }, 1000);
+      }
+    }
+
+    // Despliegue de datos de usuario con ID
+    function showSuccessView(user) {
+      hideAlert();
+      loginCard.classList.add('hidden');
+      registerCard.classList.add('hidden');
+      successCard.classList.remove('hidden');
+
+      document.getElementById('successUserId').textContent = user.id || 'N/A';
+      document.getElementById('successUserName').textContent = user.name || 'Usuario';
+      document.getElementById('successUserEmail').textContent = user.email;
+    }
+
+    // Copiar ID único al portapapeles
+    function copyUserId() {
+      const userIdText = document.getElementById('successUserId').textContent.trim();
+      const copyIcon = document.getElementById('copyIcon');
+
+      const tempInput = document.createElement('input');
+      tempInput.value = userIdText;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      copyIcon.className = 'fa-solid fa-check text-green-500';
+      setTimeout(() => {
+        copyIcon.className = 'fa-regular fa-copy';
+      }, 2000);
+    }
+
+    // Resetear formularios y volver al login
+    function logout() {
+      document.getElementById('loginForm').reset();
+      document.getElementById('registerForm').reset();
+      toggleView('login');
+    }
+
+    // Control de spinners de carga en botones
+    function setLoading(formType, isLoading) {
+      hideAlert();
+      const prefix = formType === 'login' ? 'login' : 'reg';
+      const btn = document.getElementById(prefix + 'Btn');
+      const text = document.getElementById(prefix + 'BtnText');
+      const spinner = document.getElementById(prefix + 'BtnSpinner');
+
+      btn.disabled = isLoading;
+      if (isLoading) {
+        text.classList.add('hidden');
+        spinner.classList.remove('hidden');
+      } else {
+        text.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    }
+  </script>
