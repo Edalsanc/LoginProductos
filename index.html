@@ -20,20 +20,16 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; rounded: 8px;}
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px;}
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
     
-    /* Estilos tabla Kardex */
     .kardex-table th { border: 1px solid #e2e8f0; vertical-align: middle; }
     .kardex-table td { border: 1px solid #e2e8f0; vertical-align: middle; padding: 0.5rem; }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 font-sans antialiased overflow-x-hidden">
 
-  <!-- ========================================== -->
-  <!-- NOTIFICACIONES GLOBALES                    -->
-  <!-- ========================================== -->
-  <div id="alertBox" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-xl text-sm font-semibold flex items-center space-x-3 transition-all fade-in min-w-[300px] justify-between">
+  <div id="alertBox" class="hidden fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-xl text-sm font-bold flex items-center space-x-3 transition-all fade-in min-w-[300px] justify-between">
     <div class="flex items-center space-x-2">
       <i id="alertIcon" class="fa-solid fa-bell text-lg"></i>
       <span id="alertMessage">Mensaje informativo</span>
@@ -41,56 +37,64 @@
     <button onclick="hideAlert()" class="focus:outline-none opacity-70 hover:opacity-100"><i class="fa-solid fa-xmark"></i></button>
   </div>
 
-  <!-- ========================================== -->
-  <!-- VISTA 1: ZONA DE AUTENTICACIÓN             -->
-  <!-- ========================================== -->
   <div id="authSection" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 p-8 fade-in">
-      
-      <!-- Login -->
       <div id="loginCard">
         <div class="text-center mb-8">
           <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl mb-3 shadow-inner">
             <i class="fa-solid fa-boxes-stacked text-2xl"></i>
           </div>
           <h2 class="text-2xl font-extrabold text-gray-800">Kardex System</h2>
-          <p class="text-gray-500 text-sm mt-1">Ingresa para gestionar tu inventario</p>
+          <p class="text-gray-500 text-sm mt-1">Acceso seguro a inventario</p>
         </div>
-        <form class="space-y-4" onsubmit="event.preventDefault(); submitLogin();">
+        
+        <form id="loginForm" class="space-y-4" onsubmit="event.preventDefault(); submitLogin();">
           <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Correo Electrónico</label>
-            <input type="email" id="logEmail" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Correo Electrónico</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-regular fa-envelope"></i></span>
+              <input type="email" id="logEmail" required class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Contraseña</label>
-            <input type="password" id="logPass" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" id="logPass" required class="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition">
+              <button type="button" onclick="togglePasswordVisibility('logPass', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" id="btnLog" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center">
             <span id="btnLogText">Iniciar Sesión</span>
             <i id="btnLogSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
           </button>
         </form>
+        <div class="mt-4 text-center text-xs text-gray-400">
+          <p><i class="fa-solid fa-lock mr-1"></i> Sistema cifrado y monitoreado</p>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- VISTA 2: APLICACIÓN KARDEX (DASHBOARD)     -->
-  <!-- ========================================== -->
   <div id="appSection" class="hidden min-h-screen bg-gray-100 flex flex-col">
     
-    <!-- Navbar -->
+    <!-- Navbar Header -->
     <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-3 flex justify-between items-center sticky top-0 z-40">
       <div class="flex items-center space-x-3">
         <div class="bg-blue-600 text-white p-2 rounded-lg"><i class="fa-solid fa-boxes-stacked"></i></div>
         <h1 class="font-extrabold text-xl tracking-tight text-gray-800">Kardex<span class="text-blue-600">Pro</span></h1>
       </div>
       <div class="flex items-center space-x-4">
-        <div class="text-right hidden sm:block">
-          <p id="navUserName" class="text-sm font-bold text-gray-800">Usuario</p>
-          <p id="navUserRole" class="text-xs text-gray-500">Administrador</p>
+        <div class="text-right">
+          <p class="text-sm font-bold text-gray-800 flex items-center justify-end">
+            <i class="fa-solid fa-circle-user text-blue-500 mr-1.5"></i>
+            <span id="navUserName">Usuario</span>
+          </p>
+          <p id="navUserRole" class="text-[10px] uppercase tracking-wider font-semibold text-gray-500">Rol</p>
         </div>
-        <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition p-2 bg-gray-50 rounded-full border border-gray-200">
+        <button onclick="logout(true)" title="Cerrar Sesión" class="text-gray-400 hover:text-red-500 transition p-2 bg-gray-50 rounded-full border border-gray-200">
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       </div>
@@ -99,7 +103,6 @@
     <!-- Contenido Principal -->
     <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col space-y-6">
       
-      <!-- Navegación por Pestañas -->
       <div class="flex space-x-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200 overflow-x-auto custom-scrollbar">
         <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="tab-btn active px-5 py-2.5 rounded-lg text-sm font-bold bg-blue-50 text-blue-700 transition flex items-center whitespace-nowrap">
           <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
@@ -110,31 +113,31 @@
         <button onclick="switchTab('tab-registro')" id="btn-tab-registro" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition flex items-center whitespace-nowrap">
           <i class="fa-solid fa-plus-circle mr-2"></i> Registrar Movimiento
         </button>
-        <!-- NUEVOS BOTONES AÑADIDOS A CONTINUACIÓN -->
         <button onclick="switchTab('tab-new-product')" id="btn-tab-new-product" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition flex items-center whitespace-nowrap">
           <i class="fa-solid fa-box-open mr-2"></i> Nuevo Producto
         </button>
         <button onclick="switchTab('tab-new-client')" id="btn-tab-new-client" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition flex items-center whitespace-nowrap">
           <i class="fa-solid fa-address-book mr-2"></i> Nuevo Cliente
         </button>
-        <!-- NUEVO BOTÓN PARA USUARIOS (ADMIN) -->
-        <button onclick="switchTab('tab-users')" id="btn-tab-users" class="hidden tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition flex items-center whitespace-nowrap">
+        <!-- Pestañas solo para Admin -->
+        <button onclick="switchTab('tab-users')" id="btn-tab-users" class="hidden tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-purple-600 hover:bg-purple-50 transition flex items-center whitespace-nowrap border border-transparent hover:border-purple-200">
           <i class="fa-solid fa-users-cog mr-2"></i> Usuarios (Admin)
+        </button>
+        <button onclick="switchTab('tab-logs')" id="btn-tab-logs" class="hidden tab-btn px-5 py-2.5 rounded-lg text-sm font-bold text-purple-600 hover:bg-purple-50 transition flex items-center whitespace-nowrap border border-transparent hover:border-purple-200">
+          <i class="fa-solid fa-clipboard-list mr-2"></i> Logs (Admin)
         </button>
       </div>
 
-      <!-- Spinner de carga global de datos -->
+      <!-- Spinner general -->
       <div id="dataLoader" class="flex flex-col items-center justify-center py-20 text-gray-400">
         <i class="fa-solid fa-spinner fa-spin text-4xl mb-3 text-blue-500"></i>
-        <p>Sincronizando inventario...</p>
+        <p>Sincronizando sistema...</p>
       </div>
 
+      <!-- Contenedor Pestañas -->
       <div id="tabsContainer" class="hidden">
         
-        <!-- PESTAÑA: DASHBOARD (Gráficos) -->
         <div id="tab-dashboard" class="tab-content fade-in space-y-6">
-          
-          <!-- Tarjetas de resumen -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
               <div class="p-3 bg-indigo-50 text-indigo-500 rounded-xl text-xl"><i class="fa-solid fa-cubes"></i></div>
@@ -146,7 +149,7 @@
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
               <div class="p-3 bg-green-50 text-green-500 rounded-xl text-xl"><i class="fa-solid fa-arrow-trend-up"></i></div>
               <div>
-                <p class="text-xs text-gray-500 font-bold uppercase">Entradas Recientes</p>
+                <p class="text-xs text-gray-500 font-bold uppercase">Entradas Históricas</p>
                 <p id="dashCountEntradas" class="text-2xl font-black text-gray-800">0</p>
               </div>
             </div>
@@ -154,12 +157,10 @@
               <div class="p-3 bg-blue-50 text-blue-500 rounded-xl text-xl"><i class="fa-solid fa-sack-dollar"></i></div>
               <div>
                 <p class="text-xs text-gray-500 font-bold uppercase">Valor Inv. Estimado</p>
-                <p id="dashTotalValue" class="text-2xl font-black text-gray-800">$0</p>
+                <p id="dashTotalValue" class="text-xl font-black text-gray-800">$0</p>
               </div>
             </div>
           </div>
-
-          <!-- Gráficos -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
               <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-chart-bar text-blue-500 mr-2"></i>Valor del Stock por Producto (Top 10)</h3>
@@ -176,63 +177,50 @@
           </div>
         </div>
 
-        <!-- PESTAÑA: TABLA KARDEX -->
         <div id="tab-kardex" class="tab-content hidden fade-in">
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-            
-            <!-- Barra de Filtros -->
             <div class="p-4 border-b border-gray-100 bg-gray-50 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
               <div class="flex items-center space-x-3 w-full sm:w-auto">
                 <span class="text-sm font-bold text-gray-600"><i class="fa-solid fa-filter mr-1"></i> Filtrar:</span>
                 <select id="filterProduct" onchange="renderKardexTable()" class="bg-white border border-gray-300 text-sm rounded-lg px-3 py-1.5 focus:ring-blue-500 outline-none w-full sm:w-64">
                   <option value="ALL">Todos los Productos</option>
-                  <!-- Options renderizados por JS -->
                 </select>
               </div>
               <button onclick="syncData()" title="Refrescar Datos" class="bg-white border border-gray-200 text-gray-600 hover:text-blue-600 p-2 rounded-lg shadow-sm transition"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
-
-            <!-- Contenedor Tabla -->
             <div class="overflow-x-auto custom-scrollbar p-0">
               <table class="kardex-table min-w-full text-xs text-gray-700 text-center whitespace-nowrap">
                 <thead class="bg-gray-800 text-white tracking-wider">
                   <tr>
                     <th rowspan="2" class="px-3 py-2 text-left">Fecha</th>
                     <th rowspan="2" class="px-3 py-2 text-left">Producto</th>
-                    <th rowspan="2" class="px-3 py-2 text-left">Cliente / Detalle</th>
-                    <th colspan="3" class="bg-green-600 px-2 py-1">ENTRADAS</th>
-                    <th colspan="3" class="bg-red-500 px-2 py-1">SALIDAS</th>
-                    <th colspan="3" class="bg-blue-600 px-2 py-1">SALDOS</th>
+                    <th rowspan="2" class="px-3 py-2 text-left">Cliente / Proveedor</th>
+                    <th colspan="3" class="bg-green-600 px-2 py-1 border-x border-green-700">ENTRADAS</th>
+                    <th colspan="3" class="bg-red-500 px-2 py-1 border-x border-red-600">SALIDAS</th>
+                    <th colspan="3" class="bg-blue-600 px-2 py-1 border-x border-blue-700">SALDOS</th>
                   </tr>
                   <tr class="bg-gray-700 text-gray-200">
-                    <th class="px-2 py-1">Unds</th><th class="px-2 py-1">C. Unitar</th><th class="px-2 py-1">C. Total</th>
-                    <th class="px-2 py-1">Unds</th><th class="px-2 py-1">C. Unitar</th><th class="px-2 py-1">C. Total</th>
-                    <th class="px-2 py-1 font-bold">Unds</th><th class="px-2 py-1 font-bold">C. Unitar</th><th class="px-2 py-1 font-bold">C. Total</th>
+                    <th class="px-2 py-1 border border-gray-600">Unds</th><th class="px-2 py-1 border border-gray-600">C. Unitar</th><th class="px-2 py-1 border border-gray-600">C. Total</th>
+                    <th class="px-2 py-1 border border-gray-600">Unds</th><th class="px-2 py-1 border border-gray-600">C. Unitar</th><th class="px-2 py-1 border border-gray-600">C. Total</th>
+                    <th class="px-2 py-1 font-bold border border-gray-600">Unds</th><th class="px-2 py-1 font-bold border border-gray-600">C. Unitar</th><th class="px-2 py-1 font-bold border border-gray-600">C. Total</th>
                   </tr>
                 </thead>
                 <tbody id="kardexTableBody" class="bg-white divide-y divide-gray-200">
-                  <!-- Filas generadas por JS -->
+                  <!-- Filas JS -->
                 </tbody>
               </table>
-              
-              <!-- Estado vacío -->
               <div id="kardexEmpty" class="hidden flex flex-col items-center justify-center py-12 text-gray-400">
                 <i class="fa-solid fa-folder-open text-4xl mb-3 text-gray-300"></i>
                 <p>No hay registros para este filtro.</p>
               </div>
             </div>
-
           </div>
         </div>
 
-        <!-- PESTAÑA: REGISTRO DE MOVIMIENTO -->
         <div id="tab-registro" class="tab-content hidden fade-in">
           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
             <h2 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-3"><i class="fa-solid fa-file-invoice mr-2 text-blue-500"></i>Nuevo Movimiento de Inventario</h2>
-            
             <form id="movForm" class="space-y-5" onsubmit="event.preventDefault(); submitMovement();">
-              
-              <!-- Fila 1: Tipo y Fecha -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Tipo de Movimiento</label>
@@ -252,24 +240,16 @@
                   <input type="date" id="movFecha" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
               </div>
-
-              <!-- Fila 2: Producto y Cliente -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Producto</label>
-                  <select id="movProducto" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="" disabled selected>Selecciona un producto...</option>
-                  </select>
+                  <select id="movProducto" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></select>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Cliente / Proveedor</label>
-                  <select id="movCliente" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="" disabled selected>Selecciona un cliente...</option>
-                  </select>
+                  <select id="movCliente" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></select>
                 </div>
               </div>
-
-              <!-- Fila 3: Cálculos Matemáticos -->
               <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Detalle Monetario</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -279,33 +259,25 @@
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1" title="Precio actual de la unidad para este registro">Precio / C. Unitar ($)</label>
-                    <input type="text" id="movCUnitar" 
-                           onfocus="this.type='number'; this.step='any'; this.value = this.dataset.raw || '';" 
-                           onblur="this.dataset.raw = this.value; this.type='text'; this.value = this.dataset.raw ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(this.dataset.raw) : '';" 
-                           oninput="calcTotal()" 
-                           required placeholder="Precio actual" 
-                           class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                    <input type="text" id="movCUnitar" onfocus="this.type='number'; this.step='any'; this.value = this.dataset.raw || '';" onblur="this.dataset.raw = this.value; this.type='text'; this.value = this.dataset.raw ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(this.dataset.raw) : '';" oninput="calcTotal()" required placeholder="Precio actual" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-mono">
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">C. Total ($)</label>
                     <input type="text" id="movCTotal" readonly placeholder="$ 0,00" class="w-full px-3 py-2 bg-gray-200 border border-gray-300 rounded-lg text-sm font-bold text-gray-800 outline-none font-mono cursor-not-allowed">
                   </div>
                 </div>
-                <p class="text-[10px] text-gray-500 mt-2 italic"><i class="fa-solid fa-circle-info mr-1"></i> El <b>Precio / C. Unitar</b> define el valor exacto para esta entrada o salida. El total se calcula automáticamente.</p>
+                <p class="text-[10px] text-gray-500 mt-2 italic"><i class="fa-solid fa-circle-info mr-1"></i> El <b>Precio / C. Unitar</b> define el valor exacto para esta transacción. El total se calcula automáticamente.</p>
               </div>
-
               <div class="pt-4">
                 <button type="submit" id="btnMov" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center text-sm uppercase tracking-wide">
                   <span id="btnMovText"><i class="fa-solid fa-floppy-disk mr-2"></i>Guardar Registro</span>
                   <i id="btnMovSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
                 </button>
               </div>
-
             </form>
           </div>
         </div>
 
-        <!-- PESTAÑA: AGREGAR NUEVO PRODUCTO -->
         <div id="tab-new-product" class="tab-content hidden fade-in">
           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto space-y-8">
             <div>
@@ -323,147 +295,149 @@
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Descripción (Opcional)</label>
-                  <textarea id="newProdDesc" rows="2" placeholder="Detalles del producto..." class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                  <textarea id="newProdDesc" rows="2" placeholder="Detalles..." class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
                 </div>
                 <div class="pt-2 flex flex-col sm:flex-row gap-3">
-                  <button type="submit" id="btnNewProd" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center text-sm uppercase tracking-wide">
+                  <button type="submit" id="btnNewProd" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition flex justify-center items-center text-sm uppercase">
                     <span id="btnNewProdText"><i class="fa-solid fa-plus mr-2"></i>Guardar Producto</span>
                     <i id="btnNewProdSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
                   </button>
-                  <button type="button" id="btnCancelProd" onclick="cancelEditProduct()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition shadow-sm text-sm uppercase">Cancelar</button>
+                  <button type="button" id="btnCancelProd" onclick="cancelEditProduct()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition text-sm uppercase">Cancelar</button>
                 </div>
               </form>
             </div>
-            
-            <!-- Listado de Productos -->
             <div class="pt-6 border-t border-gray-200">
                <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-list text-indigo-500 mr-2"></i>Productos Activos</h3>
                <div class="overflow-x-auto custom-scrollbar border border-gray-100 rounded-lg">
                  <table class="min-w-full text-sm text-left whitespace-nowrap">
                    <thead class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
-                     <tr>
-                       <th class="px-4 py-3">ID / Código</th>
-                       <th class="px-4 py-3">Nombre</th>
-                       <th class="px-4 py-3">Descripción</th>
-                       <th class="px-4 py-3 text-center">Acciones</th>
-                     </tr>
+                     <tr><th class="px-4 py-3">ID</th><th class="px-4 py-3">Nombre</th><th class="px-4 py-3">Descripción</th><th class="px-4 py-3 text-center">Acciones</th></tr>
                    </thead>
-                   <tbody id="tableProductsBody" class="divide-y divide-gray-100 bg-white">
-                     <!-- Llenado por JS -->
-                   </tbody>
+                   <tbody id="tableProductsBody" class="divide-y divide-gray-100 bg-white"></tbody>
                  </table>
                </div>
             </div>
           </div>
         </div>
 
-        <!-- PESTAÑA: AGREGAR NUEVO CLIENTE / PROVEEDOR -->
         <div id="tab-new-client" class="tab-content hidden fade-in">
           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto space-y-8">
             <div>
-              <h2 id="titleCliForm" class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-3"><i class="fa-solid fa-address-book mr-2 text-teal-500"></i>Registrar Nuevo Cliente / Proveedor</h2>
+              <h2 id="titleCliForm" class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-3"><i class="fa-solid fa-address-book mr-2 text-indigo-500"></i>Registrar Nuevo Cliente / Proveedor</h2>
               <form id="cliForm" class="space-y-5" onsubmit="event.preventDefault(); submitNewClient();">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">ID Cliente / NIT</label>
-                    <input type="text" id="newCliId" required placeholder="Ej. CLI-102938" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none uppercase disabled:bg-gray-100 disabled:text-gray-500">
+                    <input type="text" id="newCliId" required placeholder="Ej. CLI-1029" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none uppercase disabled:bg-gray-100 disabled:text-gray-500">
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre o Razón Social</label>
-                    <input type="text" id="newCliName" required placeholder="Ej. Reciclajes S.A." class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                    <input type="text" id="newCliName" required placeholder="Ej. Reciclajes S.A." class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                   </div>
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contacto / Teléfono (Opcional)</label>
-                  <input type="text" id="newCliContact" placeholder="Ej. 300 123 4567" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none">
+                  <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contacto / Teléfono</label>
+                  <input type="text" id="newCliContact" placeholder="Ej. 300 123 4567" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
                 </div>
                 <div class="pt-2 flex flex-col sm:flex-row gap-3">
-                  <button type="submit" id="btnNewCli" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center text-sm uppercase tracking-wide">
+                  <button type="submit" id="btnNewCli" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition flex justify-center items-center text-sm uppercase">
                     <span id="btnNewCliText"><i class="fa-solid fa-plus mr-2"></i>Guardar Cliente</span>
                     <i id="btnNewCliSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
                   </button>
-                  <button type="button" id="btnCancelCli" onclick="cancelEditClient()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition shadow-sm text-sm uppercase">Cancelar</button>
+                  <button type="button" id="btnCancelCli" onclick="cancelEditClient()" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-xl transition text-sm uppercase">Cancelar</button>
                 </div>
               </form>
             </div>
-            
-            <!-- Listado de Clientes -->
             <div class="pt-6 border-t border-gray-200">
-               <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-list text-teal-500 mr-2"></i>Clientes Activos</h3>
+               <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-list text-indigo-500 mr-2"></i>Clientes Activos</h3>
                <div class="overflow-x-auto custom-scrollbar border border-gray-100 rounded-lg">
                  <table class="min-w-full text-sm text-left whitespace-nowrap">
                    <thead class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
-                     <tr>
-                       <th class="px-4 py-3">ID / NIT</th>
-                       <th class="px-4 py-3">Nombre</th>
-                       <th class="px-4 py-3">Contacto</th>
-                       <th class="px-4 py-3 text-center">Acciones</th>
-                     </tr>
+                     <tr><th class="px-4 py-3">ID / NIT</th><th class="px-4 py-3">Nombre</th><th class="px-4 py-3">Contacto</th><th class="px-4 py-3 text-center">Acciones</th></tr>
                    </thead>
-                   <tbody id="tableClientsBody" class="divide-y divide-gray-100 bg-white">
-                     <!-- Llenado por JS -->
-                   </tbody>
+                   <tbody id="tableClientsBody" class="divide-y divide-gray-100 bg-white"></tbody>
                  </table>
                </div>
             </div>
           </div>
         </div>
 
-        <!-- PESTAÑA: GESTIÓN DE USUARIOS (SOLO ADMIN) -->
         <div id="tab-users" class="tab-content hidden fade-in">
           <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-4xl mx-auto space-y-8">
             <div>
-              <h2 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-3"><i class="fa-solid fa-users-cog mr-2 text-indigo-500"></i>Gestión de Usuarios</h2>
+              <h2 class="text-xl font-extrabold text-gray-800 mb-6 border-b pb-3"><i class="fa-solid fa-users-cog mr-2 text-purple-600"></i>Gestión de Accesos</h2>
               <form id="userForm" class="space-y-5" onsubmit="event.preventDefault(); submitNewUser();">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nombre Completo</label>
-                    <input type="text" id="newUserName" required placeholder="Ej. Juan Pérez" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="text" id="newUserName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Correo Electrónico</label>
-                    <input type="email" id="newUserEmail" required placeholder="correo@ejemplo.com" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="email" id="newUserEmail" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
                   </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Contraseña</label>
-                    <input type="password" id="newUserPass" required placeholder="Contraseña segura" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <input type="password" id="newUserPass" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none">
                   </div>
                   <div>
                     <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Rol</label>
-                    <select id="newUserRole" required class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                      <option value="" disabled selected>Cargando roles...</option>
-                    </select>
+                    <select id="newUserRole" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"></select>
                   </div>
                 </div>
                 <div class="pt-2">
-                  <button type="submit" id="btnNewUser" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center text-sm uppercase tracking-wide">
-                    <span id="btnNewUserText"><i class="fa-solid fa-user-plus mr-2"></i>Crear Usuario</span>
+                  <button type="submit" id="btnNewUser" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition shadow-md flex justify-center items-center text-sm uppercase">
+                    <span id="btnNewUserText"><i class="fa-solid fa-user-plus mr-2"></i>Crear Cuenta</span>
                     <i id="btnNewUserSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
                   </button>
                 </div>
               </form>
             </div>
-            
-            <!-- Listado de Usuarios -->
             <div class="pt-6 border-t border-gray-200">
-               <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-list text-indigo-500 mr-2"></i>Usuarios Activos</h3>
+               <h3 class="font-bold text-gray-700 mb-4 text-sm"><i class="fa-solid fa-list text-purple-500 mr-2"></i>Usuarios Activos</h3>
                <div class="overflow-x-auto custom-scrollbar border border-gray-100 rounded-lg">
                  <table class="min-w-full text-sm text-left whitespace-nowrap">
                    <thead class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
-                     <tr>
-                       <th class="px-4 py-3">Nombre</th>
-                       <th class="px-4 py-3">Email</th>
-                       <th class="px-4 py-3">Rol</th>
-                       <th class="px-4 py-3 text-center">Acciones</th>
-                     </tr>
+                     <tr><th class="px-4 py-3">Nombre</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Rol</th><th class="px-4 py-3 text-center">Acciones</th></tr>
                    </thead>
-                   <tbody id="tableUsersBody" class="divide-y divide-gray-100 bg-white">
-                     <!-- Llenado por JS -->
-                   </tbody>
+                   <tbody id="tableUsersBody" class="divide-y divide-gray-100 bg-white"></tbody>
                  </table>
                </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-logs" class="tab-content hidden fade-in">
+          <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 max-w-6xl mx-auto space-y-6">
+            <h2 class="text-xl font-extrabold text-gray-800 border-b pb-3"><i class="fa-solid fa-clipboard-list mr-2 text-purple-600"></i>Historial de Logs (Auditoría)</h2>
+            
+            <div class="flex flex-col sm:flex-row items-end space-y-4 sm:space-y-0 sm:space-x-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+              <div class="w-full sm:w-auto">
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Inicio</label>
+                <input type="date" id="logFilterStart" onchange="renderLogsTable()" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500">
+              </div>
+              <div class="w-full sm:w-auto">
+                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Fin</label>
+                <input type="date" id="logFilterEnd" onchange="renderLogsTable()" class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-purple-500">
+              </div>
+              <div class="w-full sm:w-auto">
+                 <button onclick="resetLogsFilter()" class="w-full px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-lg text-sm transition">Limpiar Filtro</button>
+              </div>
+            </div>
+            
+            <div class="overflow-x-auto custom-scrollbar border border-gray-100 rounded-lg">
+              <table class="min-w-full text-sm text-left whitespace-nowrap">
+                <thead class="bg-gray-800 text-white font-bold tracking-wider">
+                  <tr><th class="px-4 py-3">Fecha y Hora</th><th class="px-4 py-3">Usuario</th><th class="px-4 py-3">Acción</th><th class="px-4 py-3">Detalle</th></tr>
+                </thead>
+                <tbody id="tableLogsBody" class="divide-y divide-gray-200 bg-white"></tbody>
+              </table>
+              <div id="logsEmpty" class="hidden flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50">
+                <i class="fa-solid fa-folder-open text-4xl mb-3 text-gray-300"></i>
+                <p>No se encontraron registros en este rango.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -472,44 +446,38 @@
     </main>
   </div>
 
-  <!-- ========================================== -->
-  <!-- LÓGICA JAVASCRIPT                          -->
-  <!-- ========================================== -->
   <script>
-    /* VARIABLES GLOBALES */
     const SESSION_KEY = 'kardexPro_user_session';
-    const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos en milisegundos
+    const TIMEOUT_MS = 30 * 60 * 1000; // 30 minutos inactividad
     let inactivityInterval;
+    const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' });
 
     let currentUser = null;
-    let dbProducts = [];
-    let dbClients = [];
-    let dbKardex = [];
-    let dbUsers = [];
-    let dbRoles = [];
+    let dbProducts = [], dbClients = [], dbKardex = [], dbUsers = [], dbRoles = [], dbLogs = [];
     let chart1 = null, chart2 = null;
+    let isEditingProduct = false, isEditingClient = false, isEditingUser = false, currentEditUserId = null;
 
-    /* ========== UI: ALERTAS ========== */
+    // UI Alertas
     function showAlert(msg, type = 'info') {
       const box = document.getElementById('alertBox');
       const icon = document.getElementById('alertIcon');
       document.getElementById('alertMessage').textContent = msg;
       
       box.className = `fixed top-5 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-xl text-sm font-bold flex items-center space-x-3 transition-all fade-in min-w-[300px] justify-between text-white`;
-      
       if(type === 'success') { box.classList.add('bg-green-500'); icon.className = 'fa-solid fa-circle-check text-lg'; }
       else if(type === 'error') { box.classList.add('bg-red-500'); icon.className = 'fa-solid fa-triangle-exclamation text-lg'; }
       else { box.classList.add('bg-blue-500'); icon.className = 'fa-solid fa-circle-info text-lg'; }
       
       box.classList.remove('hidden');
-      setTimeout(hideAlert, 4000);
+      setTimeout(() => box.classList.add('hidden'), 4000);
     }
     function hideAlert() { document.getElementById('alertBox').classList.add('hidden'); }
 
-    /* ========== UI: AUTH ========== */
-    function toggleAuth(view) {
-      document.getElementById('loginCard').classList.toggle('hidden', view === 'register');
-      document.getElementById('registerCard').classList.toggle('hidden', view === 'login');
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') { input.type = 'text'; icon.className = 'fa-regular fa-eye-slash'; }
+      else { input.type = 'password'; icon.className = 'fa-regular fa-eye'; }
     }
 
     function toggleBtnLoad(btnId, isLoading) {
@@ -526,576 +494,50 @@
       if(typeof google !== 'undefined') {
         google.script.run.withSuccessHandler(res => {
           toggleBtnLoad('btnLog', false);
+          if(!res) { showAlert('Error interno: El servidor no devolvió datos legibles.', 'error'); return; }
           if(res.success) initApp(res.user); else showAlert(res.message, 'error');
+        }).withFailureHandler(err => {
+          toggleBtnLoad('btnLog', false);
+          showAlert('Fallo de red: ' + err.message, 'error');
         }).handleLogin({email: email, password: pass});
-      } else {
-        // Mocking para diseño
-        setTimeout(() => { toggleBtnLoad('btnLog', false); initApp({name:'Test Admin', id:'USR-123'}); }, 1000);
       }
     }
 
-    function submitRegister() {
-      toggleBtnLoad('btnReg', true);
-      const name = document.getElementById('regName').value;
-      const email = document.getElementById('regEmail').value;
-      const pass = document.getElementById('regPass').value;
-      
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          toggleBtnLoad('btnReg', false);
-          if(res.success) { showAlert(res.message, 'success'); toggleAuth('login'); }
-          else showAlert(res.message, 'error');
-        }).handleRegister({name: name, email: email, password: pass});
-      }
-    }
-
-    /* ========== INICIO DE APLICACIÓN KARDEX ========== */
     function initApp(user) {
       currentUser = user;
       document.getElementById('navUserName').textContent = user.name;
       document.getElementById('navUserRole').textContent = user.role || 'Usuario';
       
-      // Mostrar pestaña de usuarios solo si es admin
-      const btnTabUsers = document.getElementById('btn-tab-users');
+      const btnUsers = document.getElementById('btn-tab-users');
+      const btnLogs = document.getElementById('btn-tab-logs');
       if (user.role === 'Admin') {
-        btnTabUsers.classList.remove('hidden');
+        btnUsers.classList.remove('hidden');
+        btnLogs.classList.remove('hidden');
       } else {
-        btnTabUsers.classList.add('hidden');
+        btnUsers.classList.add('hidden');
+        btnLogs.classList.add('hidden');
       }
 
-      // Transición UI
       document.getElementById('authSection').classList.add('hidden');
       document.getElementById('appSection').classList.remove('hidden');
-      
-      // Setear fecha actual en formulario
       document.getElementById('movFecha').valueAsDate = new Date();
-
-      // Guardar sesión en el navegador y activar inactividad
       saveSession(user);
-
-      syncData(); // Traer BD de Google Sheets
+      syncData();
     }
 
-    function logout() {
-      currentUser = null;
-      
-      // Limpiar almacenamiento y temporizadores
-      localStorage.removeItem(SESSION_KEY);
-      if(inactivityInterval) clearInterval(inactivityInterval);
-
-      document.getElementById('appSection').classList.add('hidden');
-      document.getElementById('authSection').classList.remove('hidden');
-      document.getElementById('logPass').value = '';
-    }
-
-    function syncData() {
-      document.getElementById('dataLoader').classList.remove('hidden');
-      document.getElementById('tabsContainer').classList.add('hidden');
-      
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          if(res.success) {
-            dbProducts = res.products;
-            dbClients = res.clients;
-            dbKardex = res.kardex;
-            dbUsers = res.users || [];
-            dbRoles = res.roles || [];
-            
-            populateSelects();
-            renderKardexTable();
-            renderCharts();
-            renderAdminTables();
-            renderUsersTable();
-            
-            document.getElementById('dataLoader').classList.add('hidden');
-            document.getElementById('tabsContainer').classList.remove('hidden');
-            showAlert('Sincronización completa.', 'success');
-          }
-        }).getAppData();
-      }
-    }
-
-    /* ========== NAVEGACIÓN TABS ========== */
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.getElementById(tabId).classList.remove('hidden');
-      
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-50', 'text-blue-700');
-        btn.classList.add('text-gray-600', 'hover:bg-gray-50');
-      });
-      const activeBtn = document.getElementById('btn-' + tabId);
-      activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-50');
-      activeBtn.classList.add('bg-blue-50', 'text-blue-700');
-    }
-
-    /* ========== FORMULARIO MOVIMIENTO ========== */
-    function populateSelects() {
-      // Poblar Selects Formularios
-      const selProd = document.getElementById('movProducto');
-      const selCli = document.getElementById('movCliente');
-      const selFil = document.getElementById('filterProduct');
-      const selRole = document.getElementById('newUserRole');
-      
-      selProd.innerHTML = '<option value="" disabled selected>Selecciona un producto...</option>';
-      selFil.innerHTML = '<option value="ALL">Todos los Productos</option>';
-      
-      // Filtrar productos inactivos
-      dbProducts.filter(p => p.estado !== 'Inactivo').forEach(p => {
-        selProd.innerHTML += `<option value="${p.id}">${p.nombre} (${p.id})</option>`;
-        selFil.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
-      });
-      
-      selCli.innerHTML = '<option value="" disabled selected>Selecciona un cliente...</option>';
-      // Filtrar clientes inactivos
-      dbClients.filter(c => c.estado !== 'Inactivo').forEach(c => {
-        selCli.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
-      });
-
-      // Poblar select de roles dinámicamente
-      if(selRole) {
-        selRole.innerHTML = '<option value="" disabled selected>Selecciona un rol...</option>';
-        dbRoles.filter(r => r.estado !== 'Inactivo').forEach(r => {
-          selRole.innerHTML += `<option value="${r.nombre}">${r.nombre}</option>`;
-        });
-      }
-    }
-
-    function calcTotal() {
-      const u = parseFloat(document.getElementById('movUnds').value) || 0;
-      const cInput = document.getElementById('movCUnitar');
-      
-      // Obtenemos el valor numérico limpio (dependiendo de si el usuario está escribiendo o no)
-      const c = parseFloat(cInput.type === 'number' ? cInput.value : cInput.dataset.raw) || 0;
-      
-      const total = u * c;
-      const cTotalInput = document.getElementById('movCTotal');
-      
-      // Guardamos el número real oculto y mostramos el valor formateado
-      cTotalInput.dataset.raw = total;
-      cTotalInput.value = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(total);
-    }
-
-    function submitMovement() {
-      const tipo = document.querySelector('input[name="movTipo"]:checked').value;
-      
-      const cUnitarInput = document.getElementById('movCUnitar');
-      const cTotalInput = document.getElementById('movCTotal');
-      
-      // Extraemos el valor real antes del formato para mandarlo a Google Sheets
-      const c_unitar_val = parseFloat(cUnitarInput.dataset.raw || cUnitarInput.value) || 0;
-      const c_total_val = parseFloat(cTotalInput.dataset.raw) || 0;
-
-      const data = {
-        tipo: tipo,
-        fecha: document.getElementById('movFecha').value,
-        prodId: document.getElementById('movProducto').value,
-        cliente: document.getElementById('movCliente').value,
-        unds: document.getElementById('movUnds').value,
-        c_unitar: c_unitar_val,
-        c_total: c_total_val,
-        userId: currentUser.id
-      };
-
-      if(data.unds <= 0 || data.c_unitar <= 0) {
-        showAlert('Los valores deben ser mayores a cero.', 'error'); return;
-      }
-
-      toggleBtnLoad('btnMov', true);
-      
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          toggleBtnLoad('btnMov', false);
-          if(res.success) {
-            showAlert('Guardado exitosamente.', 'success');
-            // Limpiamos datos del formulario y variables raw
-            document.getElementById('movUnds').value = '';
-            document.getElementById('movCUnitar').value = '';
-            document.getElementById('movCUnitar').dataset.raw = '';
-            document.getElementById('movCTotal').value = '';
-            document.getElementById('movCTotal').dataset.raw = '';
-            syncData(); // Recargar todo para actualizar saldos y gráficas
-            switchTab('tab-kardex'); // Ir a la tabla para ver resultado
-          } else {
-            showAlert(res.message, 'error');
-          }
-        }).saveMovement(data);
-      }
-    }
-
-    /* ========== GESTIÓN DE PRODUCTOS Y CLIENTES ========== */
-
-    let isEditingProduct = false;
-    let isEditingClient = false;
-
-    // Guardar o Actualizar producto
-    function submitNewProduct() {
-      const data = {
-        id: document.getElementById('newProdId').value.trim(),
-        nombre: document.getElementById('newProdName').value.trim(),
-        descripcion: document.getElementById('newProdDesc').value.trim()
-      };
-
-      toggleBtnLoad('btnNewProd', true);
-      
-      if(typeof google !== 'undefined') {
-        const runner = google.script.run
-          .withSuccessHandler(res => {
-            toggleBtnLoad('btnNewProd', false);
-            if(res.success) {
-              showAlert(res.message, 'success');
-              cancelEditProduct(); // Limpia formulario
-              syncData(); // Refresca tablas y selects
-            } else {
-              showAlert(res.message, 'error');
-            }
-          })
-          .withFailureHandler(err => {
-            toggleBtnLoad('btnNewProd', false);
-            showAlert('Error de red al comunicarse con el servidor', 'error');
-          });
-
-        // Ejecutamos la función correspondiente al final
-        if (isEditingProduct) {
-          runner.updateProduct(data);
-        } else {
-          runner.saveProduct(data);
-        }
-      }
-    }
-
-    // Guardar o Actualizar cliente
-    function submitNewClient() {
-      const data = {
-        id: document.getElementById('newCliId').value.trim(),
-        nombre: document.getElementById('newCliName').value.trim(),
-        contacto: document.getElementById('newCliContact').value.trim()
-      };
-
-      toggleBtnLoad('btnNewCli', true);
-      
-      if(typeof google !== 'undefined') {
-        const runner = google.script.run
-          .withSuccessHandler(res => {
-            toggleBtnLoad('btnNewCli', false);
-            if(res.success) {
-              showAlert(res.message, 'success');
-              cancelEditClient(); // Limpia formulario
-              syncData(); // Refresca tablas y selects
-            } else {
-              showAlert(res.message, 'error');
-            }
-          })
-          .withFailureHandler(err => {
-            toggleBtnLoad('btnNewCli', false);
-            showAlert('Error de red al comunicarse con el servidor', 'error');
-          });
-
-        // Ejecutamos la función correspondiente al final
-        if (isEditingClient) {
-          runner.updateClient(data);
-        } else {
-          runner.saveClient(data);
-        }
-      }
-    }
-
-    /* ========== TABLAS Y EDICIÓN (ADMIN) ========== */
-    function renderAdminTables() {
-      const pBody = document.getElementById('tableProductsBody');
-      const cBody = document.getElementById('tableClientsBody');
-      
-      pBody.innerHTML = '';
-      dbProducts.filter(p => p.estado !== 'Inactivo').forEach(p => {
-        pBody.innerHTML += `<tr class="hover:bg-gray-50 transition">
-          <td class="px-4 py-3 font-mono text-xs text-gray-500">${p.id}</td>
-          <td class="px-4 py-3 font-bold text-gray-800">${p.nombre}</td>
-          <td class="px-4 py-3 text-gray-600 truncate max-w-xs">${p.desc || '-'}</td>
-          <td class="px-4 py-3 text-center space-x-2">
-            <button onclick="editProduct('${p.id}')" title="Editar" class="text-blue-500 hover:text-blue-700 p-1.5 bg-blue-50 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="deleteProduct('${p.id}')" title="Eliminar" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg transition"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>`;
-      });
-
-      cBody.innerHTML = '';
-      dbClients.filter(c => c.estado !== 'Inactivo').forEach(c => {
-        cBody.innerHTML += `<tr class="hover:bg-gray-50 transition">
-          <td class="px-4 py-3 font-mono text-xs text-gray-500">${c.id}</td>
-          <td class="px-4 py-3 font-bold text-gray-800">${c.nombre}</td>
-          <td class="px-4 py-3 text-gray-600">${c.contacto || '-'}</td>
-          <td class="px-4 py-3 text-center space-x-2">
-            <button onclick="editClient('${c.id}')" title="Editar" class="text-teal-500 hover:text-teal-700 p-1.5 bg-teal-50 rounded-lg transition"><i class="fa-solid fa-pen"></i></button>
-            <button onclick="deleteClient('${c.id}')" title="Eliminar" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg transition"><i class="fa-solid fa-trash"></i></button>
-          </td>
-        </tr>`;
-      });
-    }
-
-    // Funciones Edición y Eliminación: Producto
-    function editProduct(id) {
-      const p = dbProducts.find(x => x.id === id);
-      if(!p) return;
-      isEditingProduct = true;
-      document.getElementById('newProdId').value = p.id;
-      document.getElementById('newProdId').disabled = true; // Bloquea ID
-      document.getElementById('newProdName').value = p.nombre;
-      document.getElementById('newProdDesc').value = p.desc;
-      
-      document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-indigo-500"></i>Editar Producto`;
-      document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`;
-      document.getElementById('btnCancelProd').classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEditProduct() {
-      isEditingProduct = false;
-      document.getElementById('prodForm').reset();
-      document.getElementById('newProdId').disabled = false;
-      document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-box-open mr-2 text-indigo-500"></i>Registrar Nuevo Producto`;
-      document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar Producto`;
-      document.getElementById('btnCancelProd').classList.add('hidden');
-    }
-
-    function deleteProduct(id) {
-      if(!confirm('¿Estás seguro de eliminar este producto? (Se ocultará del sistema)')) return;
-      document.getElementById('dataLoader').classList.remove('hidden'); // Loader manual
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          if(res.success) { showAlert(res.message, 'success'); syncData(); }
-          else showAlert(res.message, 'error');
-        }).deleteProduct(id);
-      }
-    }
-
-    // Funciones Edición y Eliminación: Cliente
-    function editClient(id) {
-      const c = dbClients.find(x => x.id === id);
-      if(!c) return;
-      isEditingClient = true;
-      document.getElementById('newCliId').value = c.id;
-      document.getElementById('newCliId').disabled = true; // Bloquea ID
-      document.getElementById('newCliName').value = c.nombre;
-      document.getElementById('newCliContact').value = c.contacto;
-      
-      document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-teal-500"></i>Editar Cliente`;
-      document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`;
-      document.getElementById('btnCancelCli').classList.remove('hidden');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEditClient() {
-      isEditingClient = false;
-      document.getElementById('cliForm').reset();
-      document.getElementById('newCliId').disabled = false;
-      document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-address-book mr-2 text-teal-500"></i>Registrar Nuevo Cliente / Proveedor`;
-      document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar Cliente`;
-      document.getElementById('btnCancelCli').classList.add('hidden');
-    }
-
-    function deleteClient(id) {
-      if(!confirm('¿Estás seguro de eliminar este cliente? (Se ocultará del sistema)')) return;
-      document.getElementById('dataLoader').classList.remove('hidden');
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          if(res.success) { showAlert(res.message, 'success'); syncData(); }
-          else showAlert(res.message, 'error');
-        }).deleteClient(id);
-      }
-    }
-
-    /* ========== GESTIÓN DE USUARIOS (NUEVO) ========== */
-    function submitNewUser() {
-      const data = {
-        nombre: document.getElementById('newUserName').value.trim(),
-        email: document.getElementById('newUserEmail').value.trim(),
-        password: document.getElementById('newUserPass').value,
-        rol: document.getElementById('newUserRole').value
-      };
-
-      toggleBtnLoad('btnNewUser', true);
-      
-      if(typeof google !== 'undefined') {
-        google.script.run
-          .withSuccessHandler(res => {
-            toggleBtnLoad('btnNewUser', false);
-            if(res.success) {
-              showAlert(res.message, 'success');
-              document.getElementById('userForm').reset();
-              syncData();
-            } else {
-              showAlert(res.message, 'error');
-            }
-          })
-          .withFailureHandler(err => {
-            toggleBtnLoad('btnNewUser', false);
-            showAlert('Error de red', 'error');
-          })
-          .saveUser(data);
-      }
-    }
-
-    function deleteUser(id) {
-      if(!confirm('¿Estás seguro de desactivar este usuario? Ya no podrá iniciar sesión.')) return;
-      document.getElementById('dataLoader').classList.remove('hidden');
-      if(typeof google !== 'undefined') {
-        google.script.run.withSuccessHandler(res => {
-          if(res.success) { showAlert(res.message, 'success'); syncData(); }
-          else showAlert(res.message, 'error');
-        }).deleteUser(id);
-      }
-    }
-
-    function renderUsersTable() {
-      const uBody = document.getElementById('tableUsersBody');
-      if(!uBody) return;
-      uBody.innerHTML = '';
-      dbUsers.filter(u => u.estado !== 'Inactivo').forEach(u => {
-        const badgeColor = u.rol === 'Admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700';
-        uBody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-50">
-          <td class="px-4 py-3 font-bold text-gray-800">${u.nombre}</td>
-          <td class="px-4 py-3 text-gray-600">${u.email}</td>
-          <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] rounded-lg font-bold uppercase ${badgeColor}">${u.rol}</span></td>
-          <td class="px-4 py-3 text-center">
-            ${u.id !== currentUser.id 
-              ? `<button onclick="deleteUser('${u.id}')" title="Desactivar Usuario" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg transition"><i class="fa-solid fa-user-slash"></i></button>` 
-              : '<span class="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded">Tú</span>'}
-          </td>
-        </tr>`;
-      });
-    }
-
-    /* ========== RENDERIZADO TABLA KARDEX ========== */
-    const fmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' });
-    
-    function renderKardexTable() {
-      const tbody = document.getElementById('kardexTableBody');
-      const filter = document.getElementById('filterProduct').value;
-      
-      tbody.innerHTML = '';
-      
-      // Filtrar
-      let filtered = dbKardex;
-      if(filter !== 'ALL') filtered = dbKardex.filter(r => r.prodId === filter);
-      
-      if(filtered.length === 0) {
-        document.getElementById('kardexEmpty').classList.remove('hidden');
-      } else {
-        document.getElementById('kardexEmpty').classList.add('hidden');
-        
-        filtered.forEach(row => {
-          const isEntrada = row.tipo === 'Entrada';
-          const isSalida = row.tipo === 'Salida';
-          
-          const dFecha = new Date(row.fecha).toLocaleDateString();
-          
-          let html = `<tr class="hover:bg-gray-50 transition border-b border-gray-100">
-            <td class="text-left font-mono text-gray-500">${dFecha}</td>
-            <td class="text-left font-bold text-gray-800">${row.prodNombre}</td>
-            <td class="text-left text-gray-600">${row.cliente} <br><span class="text-[10px] uppercase px-1.5 py-0.5 rounded ${isEntrada?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${row.tipo}</span></td>
-            
-            <!-- ENTRADAS -->
-            <td class="${isEntrada?'font-bold text-green-700':''} bg-green-50/30">${isEntrada? row.unds : ''}</td>
-            <td class="${isEntrada?'font-mono text-gray-600':''} bg-green-50/30">${isEntrada? fmt.format(row.c_unitar) : ''}</td>
-            <td class="${isEntrada?'font-bold font-mono text-green-800':''} bg-green-50/30 border-r-2 border-gray-200">${isEntrada? fmt.format(row.c_total) : ''}</td>
-            
-            <!-- SALIDAS -->
-            <td class="${isSalida?'font-bold text-red-700':''} bg-red-50/30">${isSalida? row.unds : ''}</td>
-            <td class="${isSalida?'font-mono text-gray-600':''} bg-red-50/30">${isSalida? fmt.format(row.c_unitar) : ''}</td>
-            <td class="${isSalida?'font-bold font-mono text-red-800':''} bg-red-50/30 border-r-2 border-gray-200">${isSalida? fmt.format(row.c_total) : ''}</td>
-            
-            <!-- SALDOS -->
-            <td class="font-bold text-blue-800 bg-blue-50/50">${parseFloat(row.saldo_unds).toFixed(2)}</td>
-            <td class="font-mono text-gray-600 bg-blue-50/50">${fmt.format(row.saldo_c_unitar)}</td>
-            <td class="font-bold font-mono text-blue-900 bg-blue-50/50">${fmt.format(row.saldo_c_total)}</td>
-          </tr>`;
-          
-          tbody.innerHTML += html;
-        });
-      }
-    }
-
-    /* ========== RENDERIZADO DASHBOARD (CHART.JS) ========== */
-    function renderCharts() {
-      // Extraer datos calculando el último saldo de cada producto
-      let stockData = {};
-      
-      // Agrupar buscando el último registro de cada producto en el Kardex
-      dbProducts.forEach(p => { stockData[p.id] = { nombre: p.nombre, unds: 0, valor: 0 }; });
-      
-      // Como el kardex viene invertido (más recientes primero), buscaremos el primero que aparezca de cada producto
-      let foundProds = new Set();
-      let totalValue = 0;
-      let totalEntradas = 0;
-      
-      dbKardex.forEach(row => {
-        if(row.tipo === 'Entrada') totalEntradas++;
-        
-        if(!foundProds.has(row.prodId) && stockData[row.prodId]) {
-          stockData[row.prodId].unds = row.saldo_unds;
-          stockData[row.prodId].valor = row.saldo_c_total;
-          totalValue += row.saldo_c_total;
-          foundProds.add(row.prodId);
-        }
-      });
-
-      // Actualizar Tarjetas KPI
-      document.getElementById('dashCountProd').textContent = dbProducts.length;
-      document.getElementById('dashCountEntradas').textContent = totalEntradas;
-      document.getElementById('dashTotalValue').textContent = fmt.format(totalValue);
-
-      // Preparar Arrays para Gráficos (Top 10 con más valor)
-      let sortedData = Object.values(stockData).sort((a,b) => b.valor - a.valor).slice(0, 10);
-      let labels = sortedData.map(d => d.nombre);
-      let dataValor = sortedData.map(d => d.valor);
-      let dataUnds = sortedData.map(d => d.unds);
-
-      // Gráfico 1: Valor (Barras)
-      if(chart1) chart1.destroy();
-      const ctx1 = document.getElementById('chartStockValue').getContext('2d');
-      chart1 = new Chart(ctx1, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Valor en Stock ($)',
-            data: dataValor,
-            backgroundColor: 'rgba(59, 130, 246, 0.7)',
-            borderColor: 'rgb(37, 99, 235)',
-            borderWidth: 1,
-            borderRadius: 4
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-
-      // Gráfico 2: Unidades (Doughnut)
-      if(chart2) chart2.destroy();
-      const ctx2 = document.getElementById('chartStockQty').getContext('2d');
-      chart2 = new Chart(ctx2, {
-        type: 'doughnut',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: dataUnds,
-            backgroundColor: [
-              '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316',
-              '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'
-            ],
-            borderWidth: 2
-          }]
-        },
-        options: { 
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: {size: 10} } } }
-        }
-      });
-    }
-
-    /* ========== CONTROL DE SESIÓN E INACTIVIDAD ========== */
     function saveSession(user) {
       localStorage.setItem(SESSION_KEY, JSON.stringify({ user: user, lastActive: Date.now() }));
       startInactivityTimer();
+    }
+
+    function logout(manual = false) {
+      currentUser = null;
+      localStorage.removeItem(SESSION_KEY);
+      if(inactivityInterval) clearInterval(inactivityInterval);
+      document.getElementById('appSection').classList.add('hidden');
+      document.getElementById('authSection').classList.remove('hidden');
+      document.getElementById('logPass').value = '';
+      if(!manual) showAlert('Sesión cerrada por inactividad', 'error');
     }
 
     function startInactivityTimer() {
@@ -1108,7 +550,6 @@
         }
       };
 
-      // Eventos que detectan actividad y reinician el temporizador
       window.onload = resetTimer;
       document.onmousemove = resetTimer;
       document.onkeypress = resetTimer;
@@ -1116,34 +557,410 @@
       document.onclick = resetTimer;
       window.addEventListener('scroll', resetTimer, true);
 
-      // Comprobar cada minuto si se superó el límite
       if(inactivityInterval) clearInterval(inactivityInterval);
       inactivityInterval = setInterval(() => {
         let session = localStorage.getItem(SESSION_KEY);
         if (session) {
           let data = JSON.parse(session);
-          if (Date.now() - data.lastActive > TIMEOUT_MS) {
-            showAlert('Sesión expirada por 30 minutos de inactividad.', 'error');
-            logout();
-          }
+          if (Date.now() - data.lastActive > TIMEOUT_MS) logout();
         }
       }, 60000); 
     }
 
-    // INIT AL CARGAR LA PÁGINA
+    // Persistencia por recarga de página
     document.addEventListener('DOMContentLoaded', () => {
       let session = localStorage.getItem(SESSION_KEY);
       if (session) {
         let data = JSON.parse(session);
-        // Verificar si la última actividad fue hace menos de 30 mins
         if (Date.now() - data.lastActive < TIMEOUT_MS) {
-          initApp(data.user); // Autenticación directa sin login
+          initApp(data.user);
         } else {
-          localStorage.removeItem(SESSION_KEY); // Sesión vencida
+          localStorage.removeItem(SESSION_KEY);
         }
       }
     });
 
+    function syncData() {
+      document.getElementById('dataLoader').classList.remove('hidden');
+      document.getElementById('tabsContainer').classList.add('hidden');
+      
+      if(typeof google !== 'undefined') {
+        const userEmail = currentUser ? currentUser.email : '';
+        google.script.run.withSuccessHandler(res => {
+          if(!res) {
+            document.getElementById('dataLoader').innerHTML = '<i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-red-500"></i><p class="text-red-500">Error: Hay celdas con errores (#N/A) en Google Sheets.</p>';
+            return;
+          }
+          if(res.success) {
+            dbProducts = res.products; dbClients = res.clients; dbKardex = res.kardex;
+            dbUsers = res.users || []; dbRoles = res.roles || []; dbLogs = res.logs || [];
+            
+            populateSelects();
+            renderKardexTable(); renderCharts();
+            renderAdminTables(); renderUsersTable(); renderLogsTable();
+            
+            document.getElementById('dataLoader').classList.add('hidden');
+            document.getElementById('tabsContainer').classList.remove('hidden');
+          }
+        }).getAppData(userEmail);
+      }
+    }
+
+    function switchTab(tabId) {
+      if ((tabId === 'tab-users' || tabId === 'tab-logs') && currentUser && currentUser.role !== 'Admin') {
+        showAlert('Acceso denegado. Se requiere rol de Administrador.', 'error');
+        return;
+      }
+
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-50', 'text-blue-700');
+        btn.classList.add('text-gray-600', 'hover:bg-gray-50');
+      });
+      const activeBtn = document.getElementById('btn-' + tabId);
+      activeBtn.classList.remove('text-gray-600', 'hover:bg-gray-50');
+      activeBtn.classList.add('bg-blue-50', 'text-blue-700');
+    }
+
+    function populateSelects() {
+      const selProd = document.getElementById('movProducto'), selCli = document.getElementById('movCliente');
+      const selFil = document.getElementById('filterProduct'), selRole = document.getElementById('newUserRole');
+      
+      selProd.innerHTML = '<option value="" disabled selected>Selecciona un producto...</option>';
+      selFil.innerHTML = '<option value="ALL">Todos los Productos</option>';
+      dbProducts.filter(p => p.estado !== 'Inactivo').forEach(p => {
+        selProd.innerHTML += `<option value="${p.id}">${p.nombre} (${p.id})</option>`;
+        selFil.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+      });
+      
+      selCli.innerHTML = '<option value="" disabled selected>Selecciona un cliente...</option>';
+      dbClients.filter(c => c.estado !== 'Inactivo').forEach(c => {
+        selCli.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
+      });
+
+      if(selRole) {
+        selRole.innerHTML = '<option value="" disabled selected>Selecciona un rol...</option>';
+        dbRoles.filter(r => r.estado !== 'Inactivo').forEach(r => {
+          selRole.innerHTML += `<option value="${r.nombre}">${r.nombre}</option>`;
+        });
+      }
+    }
+
+    function calcTotal() {
+      const u = parseFloat(document.getElementById('movUnds').value) || 0;
+      const cInput = document.getElementById('movCUnitar');
+      const c = parseFloat(cInput.type === 'number' ? cInput.value : cInput.dataset.raw) || 0;
+      const total = u * c;
+      const cTotalInput = document.getElementById('movCTotal');
+      cTotalInput.dataset.raw = total;
+      cTotalInput.value = fmt.format(total);
+    }
+
+    function submitMovement() {
+      const tipo = document.querySelector('input[name="movTipo"]:checked').value;
+      const cUnitarInput = document.getElementById('movCUnitar');
+      const cTotalInput = document.getElementById('movCTotal');
+      
+      const c_unitar_val = parseFloat(cUnitarInput.dataset.raw || cUnitarInput.value) || 0;
+      const c_total_val = parseFloat(cTotalInput.dataset.raw) || 0;
+
+      const data = {
+        tipo: tipo, fecha: document.getElementById('movFecha').value,
+        prodId: document.getElementById('movProducto').value,
+        cliente: document.getElementById('movCliente').value,
+        unds: document.getElementById('movUnds').value,
+        c_unitar: c_unitar_val, c_total: c_total_val, userEmail: currentUser.email
+      };
+
+      if(data.unds <= 0 || data.c_unitar <= 0) { showAlert('Valores deben ser mayor a cero.', 'error'); return; }
+
+      toggleBtnLoad('btnMov', true);
+      if(typeof google !== 'undefined') {
+        google.script.run.withSuccessHandler(res => {
+          toggleBtnLoad('btnMov', false);
+          if(res.success) {
+            showAlert('Guardado exitosamente.', 'success');
+            document.getElementById('movForm').reset();
+            document.getElementById('movCUnitar').dataset.raw = '';
+            document.getElementById('movCTotal').dataset.raw = '';
+            syncData(); switchTab('tab-kardex');
+          } else { showAlert(res.message, 'error'); }
+        }).saveMovement(data);
+      }
+    }
+
+    function submitNewProduct() {
+      const data = {
+        id: document.getElementById('newProdId').value.trim(),
+        nombre: document.getElementById('newProdName').value.trim(),
+        descripcion: document.getElementById('newProdDesc').value.trim(),
+        userEmail: currentUser.email
+      };
+      toggleBtnLoad('btnNewProd', true);
+      if(typeof google !== 'undefined') {
+        const runner = google.script.run.withSuccessHandler(res => {
+          toggleBtnLoad('btnNewProd', false);
+          if(res.success) { showAlert(res.message, 'success'); cancelEditProduct(); syncData(); }
+          else showAlert(res.message, 'error');
+        }).withFailureHandler(err => {
+          toggleBtnLoad('btnNewProd', false); showAlert('Error de red', 'error');
+        });
+        isEditingProduct ? runner.updateProduct(data) : runner.saveProduct(data);
+      }
+    }
+
+    function submitNewClient() {
+      const data = {
+        id: document.getElementById('newCliId').value.trim(),
+        nombre: document.getElementById('newCliName').value.trim(),
+        contacto: document.getElementById('newCliContact').value.trim(),
+        userEmail: currentUser.email
+      };
+      toggleBtnLoad('btnNewCli', true);
+      if(typeof google !== 'undefined') {
+        const runner = google.script.run.withSuccessHandler(res => {
+          toggleBtnLoad('btnNewCli', false);
+          if(res.success) { showAlert(res.message, 'success'); cancelEditClient(); syncData(); }
+          else showAlert(res.message, 'error');
+        }).withFailureHandler(err => {
+          toggleBtnLoad('btnNewCli', false); showAlert('Error de red', 'error');
+        });
+        isEditingClient ? runner.updateClient(data) : runner.saveClient(data);
+      }
+    }
+
+    function editProduct(id) {
+      const p = dbProducts.find(x => x.id === id); if(!p) return;
+      isEditingProduct = true;
+      document.getElementById('newProdId').value = p.id; document.getElementById('newProdId').disabled = true;
+      document.getElementById('newProdName').value = p.nombre; document.getElementById('newProdDesc').value = p.desc;
+      document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-indigo-500"></i>Editar Producto`;
+      document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`;
+      document.getElementById('btnCancelProd').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function cancelEditProduct() {
+      isEditingProduct = false; document.getElementById('prodForm').reset(); document.getElementById('newProdId').disabled = false;
+      document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-box-open mr-2 text-indigo-500"></i>Registrar Nuevo Producto`;
+      document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar Producto`;
+      document.getElementById('btnCancelProd').classList.add('hidden');
+    }
+    function deleteProduct(id) {
+      if(!confirm('¿Ocultar este producto?')) return;
+      document.getElementById('dataLoader').classList.remove('hidden');
+      if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success) { showAlert(res.message, 'success'); syncData(); } }).deleteProduct(id, currentUser.email); }
+    }
+
+    function editClient(id) {
+      const c = dbClients.find(x => x.id === id); if(!c) return;
+      isEditingClient = true;
+      document.getElementById('newCliId').value = c.id; document.getElementById('newCliId').disabled = true;
+      document.getElementById('newCliName').value = c.nombre; document.getElementById('newCliContact').value = c.contacto;
+      document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-indigo-500"></i>Editar Cliente`;
+      document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`;
+      document.getElementById('btnCancelCli').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function cancelEditClient() {
+      isEditingClient = false; document.getElementById('cliForm').reset(); document.getElementById('newCliId').disabled = false;
+      document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-address-book mr-2 text-indigo-500"></i>Registrar Nuevo Cliente`;
+      document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar Cliente`;
+      document.getElementById('btnCancelCli').classList.add('hidden');
+    }
+    function deleteClient(id) {
+      if(!confirm('¿Ocultar este cliente?')) return;
+      document.getElementById('dataLoader').classList.remove('hidden');
+      if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success) { showAlert(res.message, 'success'); syncData(); } }).deleteClient(id, currentUser.email); }
+    }
+
+    function renderAdminTables() {
+      const pBody = document.getElementById('tableProductsBody'), cBody = document.getElementById('tableClientsBody');
+      pBody.innerHTML = ''; cBody.innerHTML = '';
+      dbProducts.filter(p => p.estado !== 'Inactivo').forEach(p => {
+        pBody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100">
+          <td class="px-4 py-3 font-mono text-xs text-gray-500">${p.id}</td><td class="px-4 py-3 font-bold text-gray-800">${p.nombre}</td>
+          <td class="px-4 py-3 text-gray-600 truncate max-w-xs">${p.desc || '-'}</td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button onclick="editProduct('${p.id}')" class="text-blue-500 hover:text-blue-700 p-1.5 bg-blue-50 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deleteProduct('${p.id}')" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+          </td></tr>`;
+      });
+      dbClients.filter(c => c.estado !== 'Inactivo').forEach(c => {
+        cBody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100">
+          <td class="px-4 py-3 font-mono text-xs text-gray-500">${c.id}</td><td class="px-4 py-3 font-bold text-gray-800">${c.nombre}</td>
+          <td class="px-4 py-3 text-gray-600">${c.contacto || '-'}</td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button onclick="editClient('${c.id}')" class="text-indigo-500 hover:text-indigo-700 p-1.5 bg-indigo-50 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+            <button onclick="deleteClient('${c.id}')" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+          </td></tr>`;
+      });
+    }
+
+    function submitNewUser() {
+      const passInput = document.getElementById('newUserPass').value;
+      
+      const data = { 
+        id: currentEditUserId,
+        nombre: document.getElementById('newUserName').value.trim(), 
+        email: document.getElementById('newUserEmail').value.trim(), 
+        password: passInput, 
+        rol: document.getElementById('newUserRole').value, 
+        userEmail: currentUser.email 
+      };
+      
+      toggleBtnLoad('btnNewUser', true);
+      if(typeof google !== 'undefined') {
+        const runner = google.script.run.withSuccessHandler(res => { 
+          toggleBtnLoad('btnNewUser', false); 
+          if(res.success){ 
+            showAlert(res.message, 'success'); 
+            cancelEditUser(); 
+            syncData(); 
+          } else { 
+            showAlert(res.message, 'error'); 
+          } 
+        }).withFailureHandler(err => {
+          toggleBtnLoad('btnNewUser', false); showAlert('Error de red', 'error');
+        });
+
+        isEditingUser ? runner.updateUser(data) : runner.saveUser(data);
+      }
+    }
+
+    function editUser(id) {
+      const u = dbUsers.find(x => x.id === id); if(!u) return;
+      isEditingUser = true;
+      currentEditUserId = id;
+      document.getElementById('newUserName').value = u.nombre; 
+      document.getElementById('newUserEmail').value = u.email;
+      document.getElementById('newUserRole').value = u.rol;
+      
+      const passField = document.getElementById('newUserPass');
+      passField.value = '';
+      passField.placeholder = 'Dejar en blanco para no cambiar';
+      passField.required = false;
+
+      document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-user-pen mr-2 text-purple-600"></i>Editar Usuario`;
+      document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar Cuenta`;
+      document.getElementById('btnCancelUser').classList.remove('hidden'); 
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEditUser() {
+      isEditingUser = false; 
+      currentEditUserId = null;
+      document.getElementById('userForm').reset(); 
+      
+      const passField = document.getElementById('newUserPass');
+      passField.placeholder = '';
+      passField.required = true;
+
+      document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-users-cog mr-2 text-purple-600"></i>Gestión de Accesos`;
+      document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Crear Cuenta`;
+      document.getElementById('btnCancelUser').classList.add('hidden');
+    }
+
+    function deleteUser(id) {
+      if(!confirm('¿Desactivar este usuario?')) return;
+      document.getElementById('dataLoader').classList.remove('hidden');
+      if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success){ syncData(); } }).deleteUser(id, currentUser.email); }
+    }
+    
+    function renderUsersTable() {
+      const uBody = document.getElementById('tableUsersBody'); if(!uBody) return;
+      uBody.innerHTML = '';
+      dbUsers.filter(u => u.estado !== 'Inactivo').forEach(u => {
+        uBody.innerHTML += `<tr class="hover:bg-gray-50 transition border-b border-gray-100">
+          <td class="px-4 py-3 font-bold text-gray-800">${u.nombre}</td><td class="px-4 py-3 text-gray-600">${u.email}</td>
+          <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] rounded font-bold uppercase bg-gray-100">${u.rol}</span></td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button onclick="editUser('${u.id}')" title="Editar" class="text-purple-500 hover:text-purple-700 p-1.5 bg-purple-50 rounded-lg"><i class="fa-solid fa-pen"></i></button>
+            ${u.id !== currentUser.id ? `<button onclick="deleteUser('${u.id}')" title="Desactivar" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-lg"><i class="fa-solid fa-user-slash"></i></button>` : '<span class="text-xs text-gray-400">Tú</span>'}
+          </td></tr>`;
+      });
+    }
+
+    function renderKardexTable() {
+      const tbody = document.getElementById('kardexTableBody');
+      const filter = document.getElementById('filterProduct').value;
+      tbody.innerHTML = '';
+      
+      let filtered = (filter !== 'ALL') ? dbKardex.filter(r => r.prodId === filter) : dbKardex;
+      if(filtered.length === 0) document.getElementById('kardexEmpty').classList.remove('hidden');
+      else {
+        document.getElementById('kardexEmpty').classList.add('hidden');
+        filtered.forEach(row => {
+          const e = row.tipo === 'Entrada', s = row.tipo === 'Salida', dFecha = new Date(row.fecha).toLocaleDateString();
+          tbody.innerHTML += `<tr class="hover:bg-gray-50 border-b border-gray-100">
+            <td class="text-left font-mono text-gray-500">${dFecha}</td><td class="text-left font-bold">${row.prodNombre}</td>
+            <td class="text-left text-gray-600">${row.cliente} <br><span class="text-[10px] px-1.5 py-0.5 rounded ${e?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${row.tipo}</span></td>
+            <td class="bg-green-50/30 ${e?'font-bold text-green-700':''} border-l border-green-200">${e? row.unds : ''}</td><td class="bg-green-50/30">${e? fmt.format(row.c_unitar) : ''}</td><td class="bg-green-50/30 border-r border-green-200">${e? fmt.format(row.c_total) : ''}</td>
+            <td class="bg-red-50/30 ${s?'font-bold text-red-700':''}">${s? row.unds : ''}</td><td class="bg-red-50/30">${s? fmt.format(row.c_unitar) : ''}</td><td class="bg-red-50/30 border-r border-red-200">${s? fmt.format(row.c_total) : ''}</td>
+            <td class="font-bold text-blue-800 bg-blue-50/50">${parseFloat(row.saldo_unds).toFixed(2)}</td><td class="bg-blue-50/50">${fmt.format(row.saldo_c_unitar)}</td><td class="font-bold text-blue-900 bg-blue-50/50 border-r border-blue-200">${fmt.format(row.saldo_c_total)}</td>
+          </tr>`;
+        });
+      }
+    }
+
+    function resetLogsFilter() { document.getElementById('logFilterStart').value = ''; document.getElementById('logFilterEnd').value = ''; renderLogsTable(); }
+    function renderLogsTable() {
+      const tbody = document.getElementById('tableLogsBody'), start = document.getElementById('logFilterStart').value, end = document.getElementById('logFilterEnd').value;
+      if(!tbody) return; tbody.innerHTML = '';
+      let filtered = dbLogs;
+      if(start || end) {
+        filtered = dbLogs.filter(log => {
+          const logD = new Date(log.fecha).getTime(); let pass = true;
+          if (start && logD < new Date(start + 'T00:00:00').getTime()) pass = false;
+          if (end && logD > new Date(end + 'T23:59:59').getTime()) pass = false;
+          return pass;
+        });
+      }
+      if(filtered.length === 0) document.getElementById('logsEmpty').classList.remove('hidden');
+      else {
+        document.getElementById('logsEmpty').classList.add('hidden');
+        filtered.forEach(log => {
+          const d = new Date(log.fecha);
+          tbody.innerHTML += `<tr class="border-b border-gray-100 hover:bg-gray-50">
+            <td class="px-4 py-3 text-xs text-gray-500 font-mono">${d.toLocaleDateString()} ${d.toLocaleTimeString()}</td>
+            <td class="px-4 py-3 font-bold">${log.usuario}</td>
+            <td class="px-4 py-3"><span class="px-2 py-1 text-[10px] rounded uppercase bg-blue-50 text-blue-700 border border-blue-100">${log.accion}</span></td>
+            <td class="px-4 py-3 text-gray-600 text-xs">${log.detalle}</td></tr>`;
+        });
+      }
+    }
+
+    function renderCharts() {
+      let stockData = {};
+      dbProducts.forEach(p => { stockData[p.id] = { nombre: p.nombre, unds: 0, valor: 0 }; });
+      
+      let foundProds = new Set(), totalValue = 0, totalEntradas = 0;
+      dbKardex.forEach(row => {
+        if(row.tipo === 'Entrada') totalEntradas++;
+        if(!foundProds.has(row.prodId) && stockData[row.prodId]) {
+          stockData[row.prodId].unds = row.saldo_unds;
+          stockData[row.prodId].valor = row.saldo_c_total;
+          totalValue += row.saldo_c_total; foundProds.add(row.prodId);
+        }
+      });
+
+      document.getElementById('dashCountProd').textContent = dbProducts.length;
+      document.getElementById('dashCountEntradas').textContent = totalEntradas;
+      document.getElementById('dashTotalValue').textContent = fmt.format(totalValue);
+
+      let sortedData = Object.values(stockData).sort((a,b) => b.valor - a.valor).slice(0, 10);
+      let labels = sortedData.map(d => d.nombre), dataValor = sortedData.map(d => d.valor), dataUnds = sortedData.map(d => d.unds);
+
+      if(chart1) chart1.destroy();
+      chart1 = new Chart(document.getElementById('chartStockValue').getContext('2d'), {
+        type: 'bar', data: { labels: labels, datasets: [{ label: 'Valor en Stock ($)', data: dataValor, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderColor: 'rgb(37, 99, 235)', borderWidth: 1 }] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      if(chart2) chart2.destroy();
+      chart2 = new Chart(document.getElementById('chartStockQty').getContext('2d'), {
+        type: 'doughnut', data: { labels: labels, datasets: [{ data: dataUnds, backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#64748b'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: {size: 10} } } } }
+      });
+    }
   </script>
 </body>
 </html>

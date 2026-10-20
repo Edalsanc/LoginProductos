@@ -1,15 +1,80 @@
-/*************** CONFIGURACIÓN ****************/
 const SHEET_USERS = 'Usuarios';
-const SHEET_PRODUCTS = 'Productos';
+const SHEET_PRODS = 'Productos';
 const SHEET_CLIENTS = 'Clientes';
 const SHEET_KARDEX = 'Kardex';
 const SHEET_ROLES = 'Roles';
-
+const SHEET_LOGS = 'Logs';
 const SECRET_KEY = 'MiClaveSecretaSuperSegura_2024!';
 
-/*************** UTILIDADES Y SEGURIDAD ****************/
-function generateUniqueId(prefix) {
-  return prefix + '-' + Utilities.getUuid().substring(0, 8).toUpperCase();
+function setupDatabase() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Usuarios
+  let shUsers = ss.getSheetByName(SHEET_USERS);
+  if (!shUsers) {
+    shUsers = ss.insertSheet(SHEET_USERS);
+    shUsers.appendRow(['ID', 'Fecha de Registro', 'Nombre', 'Email', 'Contraseña', 'Rol', 'Estado']);
+    shUsers.getRange('A1:G1').setFontWeight('bold').setBackground('#f3f4f6');
+    
+    // Crear el usuario Administrador por defecto
+    const adminId = generateUserId();
+    const adminPass = encryptPassword('admin1234');
+    shUsers.appendRow([adminId, new Date(), 'Administrador Principal', 'admin@kardex.com', adminPass, 'Admin', 'Activo']);
+  }
+  
+  // 2. Productos
+  let shProds = ss.getSheetByName(SHEET_PRODS);
+  if (!shProds) {
+    shProds = ss.insertSheet(SHEET_PRODS);
+    shProds.appendRow(['ID', 'Nombre', 'Descripcion', 'Estado']);
+    shProds.getRange('A1:D1').setFontWeight('bold').setBackground('#f3f4f6');
+    
+    // Poblar productos iniciales requeridos
+    const prodList = ['Cobre', 'Cobre Brillante', 'Bronce', 'Pelusa', 'Quemado', 'Tarro Rojo', 'Cobre 1B', 'Radiador Aluminio', 'Radiador Cobre', 'Radiador Mixto', 'Baterías', 'SCRA', 'Aluminio Perfil', 'Aluminio Olla', 'Aluminio Grueso', 'Aluminio Sucio', 'Plomo', 'Limalla', 'karla', 'Antimonio', 'Acero', 'Persiana', 'Tarro Limpio', 'Lamina Litografia', 'Alambrón'];
+    prodList.forEach((p, idx) => {
+      let cod = 'PRD-' + (idx + 1).toString().padStart(3, '0');
+      shProds.appendRow([cod, p, 'Producto de reciclaje', 'Activo']);
+    });
+  }
+
+  // 3. Clientes
+  let shClients = ss.getSheetByName(SHEET_CLIENTS);
+  if (!shClients) {
+    shClients = ss.insertSheet(SHEET_CLIENTS);
+    shClients.appendRow(['ID', 'Nombre', 'Contacto', 'Estado']);
+    shClients.getRange('A1:D1').setFontWeight('bold').setBackground('#f3f4f6');
+  }
+
+  // 4. Kardex
+  let shKardex = ss.getSheetByName(SHEET_KARDEX);
+  if (!shKardex) {
+    shKardex = ss.insertSheet(SHEET_KARDEX);
+    shKardex.appendRow(['ID_Mov', 'Fecha', 'Tipo', 'Producto_ID', 'Producto_Nombre', 'Cliente', 'Unds', 'C_Unitar', 'C_Total', 'Saldo_Unds', 'Saldo_C_Unitar', 'Saldo_C_Total', 'Usuario']);
+    shKardex.getRange('A1:M1').setFontWeight('bold').setBackground('#f3f4f6');
+  }
+
+  // 5. Roles
+  let shRoles = ss.getSheetByName(SHEET_ROLES);
+  if (!shRoles) {
+    shRoles = ss.insertSheet(SHEET_ROLES);
+    shRoles.appendRow(['ID', 'Nombre', 'Estado']);
+    shRoles.getRange('A1:C1').setFontWeight('bold').setBackground('#f3f4f6');
+    shRoles.appendRow(['ROL-1', 'Admin', 'Activo']);
+    shRoles.appendRow(['ROL-2', 'Operador', 'Activo']);
+    shRoles.appendRow(['ROL-3', 'Soporte', 'Activo']);
+  }
+
+  // 6. Logs (Auditoría)
+  let shLogs = ss.getSheetByName(SHEET_LOGS);
+  if (!shLogs) {
+    shLogs = ss.insertSheet(SHEET_LOGS);
+    shLogs.appendRow(['Fecha_Hora', 'Usuario_Email', 'Accion', 'Detalle']);
+    shLogs.getRange('A1:D1').setFontWeight('bold').setBackground('#f3f4f6');
+  }
+}
+
+function generateUserId() {
+  return 'USR-' + Utilities.getUuid().substring(0, 8).toUpperCase();
 }
 
 function encryptPassword(text) {
@@ -53,405 +118,372 @@ function decryptPassword(cipherString) {
   }
 }
 
-/*************** INICIALIZACIÓN DE HOJAS ****************/
-function setupDatabase() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Hoja Usuarios
-  let sheetUsers = ss.getSheetByName(SHEET_USERS);
-  if (!sheetUsers) {
-    sheetUsers = ss.insertSheet(SHEET_USERS);
-    // Incluímos las columnas Rol y Estado
-    sheetUsers.appendRow(['ID', 'Fecha de Registro', 'Nombre', 'Email', 'Contraseña', 'Rol', 'Estado']);
-    sheetUsers.getRange('A1:G1').setFontWeight('bold').setBackground('#f3f4f6');
-    sheetUsers.setFrozenRows(1);
-  } else {
-    // Si la hoja ya existía en la versión anterior, agregamos los encabezados faltantes (columna 6 y 7)
-    if (sheetUsers.getLastColumn() === 5) {
-      sheetUsers.getRange(1, 6, 1, 2).setValues([['Rol', 'Estado']]).setFontWeight('bold').setBackground('#f3f4f6');
-    }
-  }
-
-  // 2. Hoja Productos (con carga inicial por defecto)
-  let sheetProducts = ss.getSheetByName(SHEET_PRODUCTS);
-  if (!sheetProducts) {
-    sheetProducts = ss.insertSheet(SHEET_PRODUCTS);
-    sheetProducts.appendRow(['código_id', 'nombre', 'descripcion']);
-    sheetProducts.getRange('A1:C1').setFontWeight('bold').setBackground('#f3f4f6');
-    sheetProducts.setFrozenRows(1);
-    
-    // Lista de productos solicitados
-    const defaultProducts = [
-      "Cobre", "Cobre Brillante", "Bronce", "Pelusa", "Quemado", "Tarro Rojo", 
-      "Cobre 1B", "Radiador Aluminio", "Radiador Cobre", "Radiador Mixto", 
-      "Baterías", "SCRA", "Aluminio Perfil", "Aluminio Olla", "Aluminio Grueso", 
-      "Aluminio Sucio", "Plomo", "Limalla", "karla", "Antimonio", "Acero", 
-      "Persiana", "Tarro Limpio", "Lamina Litografia", "Alambrón"
-    ];
-    
-    defaultProducts.forEach((prod, index) => {
-      let code = 'PRD-' + Utilities.formatString('%03d', index + 1);
-      sheetProducts.appendRow([code, prod, 'Producto general ' + prod]);
-    });
-  }
-
-  // 3. Hoja Clientes
-  let sheetClients = ss.getSheetByName(SHEET_CLIENTS);
-  if (!sheetClients) {
-    sheetClients = ss.insertSheet(SHEET_CLIENTS);
-    sheetClients.appendRow(['ID_Cliente', 'Nombre', 'Contacto']);
-    sheetClients.getRange('A1:C1').setFontWeight('bold').setBackground('#f3f4f6');
-    sheetClients.setFrozenRows(1);
-    sheetClients.appendRow(['CLI-001', 'Cliente Mostrador', 'N/A']);
-    sheetClients.appendRow(['CLI-002', 'Proveedor Local', 'N/A']);
-  }
-
-  // 4. Hoja Kardex
-  let sheetKardex = ss.getSheetByName(SHEET_KARDEX);
-  if (!sheetKardex) {
-    sheetKardex = ss.insertSheet(SHEET_KARDEX);
-    sheetKardex.appendRow([
-      'Fecha', 'Tipo', 'Producto_ID', 'Producto_Nombre', 'Cliente', 
-      'Unds_Mov', 'C_Unitar_Mov', 'C_Total_Mov', 
-      'Unds_Saldo', 'C_Unitar_Saldo', 'C_Total_Saldo', 'Usuario'
-    ]);
-    sheetKardex.getRange('A1:L1').setFontWeight('bold').setBackground('#e0e7ff');
-    sheetKardex.setFrozenRows(1);
-  }
-
-  // 5. Hoja Roles
-  let sheetRoles = ss.getSheetByName(SHEET_ROLES);
-  if (!sheetRoles) {
-    sheetRoles = ss.insertSheet(SHEET_ROLES);
-    sheetRoles.appendRow(['ID_Rol', 'Nombre', 'Estado']);
-    sheetRoles.getRange('A1:C1').setFontWeight('bold').setBackground('#f3f4f6');
-    sheetRoles.setFrozenRows(1);
-    
-    // Carga inicial de roles por defecto solicitados
-    sheetRoles.appendRow(['ROL-001', 'Admin', 'Activo']);
-    sheetRoles.appendRow(['ROL-002', 'Operador', 'Activo']);
-    sheetRoles.appendRow(['ROL-003', 'Soporte', 'Activo']);
-  }
-}
-
-/*************** FUNCIONES DE AUTENTICACIÓN ****************/
 function doGet(e) {
-  setupDatabase(); // Asegura que las hojas existan al cargar
+  setupDatabase(); // Inicializa si es la primera vez
   return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('Sistema Kardex & Autenticación')
+    .setTitle('Sistema Kardex Pro')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0');
 }
 
-function handleRegister(params) {
-  const { name, email, password } = params;
-  if (!name || !email || !password) return { success: false, message: 'Faltan campos obligatorios.' };
-
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][3].toString().toLowerCase() === email.toLowerCase()) {
-      return { success: false, message: 'Este correo ya está registrado.' };
+function registrarLog(usuario, accion, detalle) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetLogs = ss.getSheetByName(SHEET_LOGS);
+    if(sheetLogs) {
+      // Fecha, Usuario, Accion, Detalle
+      sheetLogs.appendRow([new Date(), usuario, accion, detalle]);
     }
+  } catch(e) {
+    console.log("Error guardando log: " + e);
   }
-  
-  const userId = generateUniqueId('USR');
-  sheet.appendRow([userId, new Date(), name, email.toLowerCase(), encryptPassword(password)]);
-  
-  return { success: true, message: 'Registro exitoso.', user: { id: userId, name: name, email: email.toLowerCase() } };
 }
 
 function handleLogin(params) {
   const { email, password } = params;
-  if (!email || !password) return { success: false, message: 'Debes ingresar correo y contraseña.' };
+  if (!email || !password) return { success: false, message: 'Faltan credenciales.' };
 
-  setupDatabase();
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_USERS);
   const data = sheet.getDataRange().getValues();
   
   for (let i = 1; i < data.length; i++) {
-    // Si el usuario está inactivo, lo saltamos
-    if (data[i][6] === 'Inactivo') continue;
-
-    if (data[i][3].toString().toLowerCase() === email.toLowerCase()) {
-      if (decryptPassword(data[i][4]) === password) {
-        return { 
+    const storedEmail = (data[i][3] || '').toString().toLowerCase();
+    const estado = data[i][6] || 'Activo';
+    
+    if (storedEmail === email.toLowerCase()) {
+      if (estado !== 'Activo') return { success: false, message: 'Usuario inactivo o bloqueado.' };
+      
+      const storedPassword = data[i][4];
+      const decryptedStoredPassword = decryptPassword(storedPassword);
+      
+      if (decryptedStoredPassword === password) {
+        registrarLog(email, "LOGIN", "Inicio de sesión exitoso");
+        const response = { 
           success: true, 
-          user: { 
-            id: data[i][0], 
-            name: data[i][2], 
-            email: data[i][3],
-            role: data[i][5] || 'Admin' // A los usuarios viejos se les tratará como Admin para no perder acceso
-          } 
+          message: 'Login exitoso.',
+          user: { id: String(data[i][0] || ''), name: String(data[i][2] || ''), email: storedEmail, role: String(data[i][5] || '') }
         };
+        return JSON.parse(JSON.stringify(response)); // Sanitización extrema para evitar errores Null
       } else {
+        registrarLog(email, "LOGIN_FALLIDO", "Intento de contraseña incorrecta");
         return { success: false, message: 'Contraseña incorrecta.' };
       }
     }
   }
-  return { success: false, message: 'El usuario no existe o fue desactivado.' };
+  return { success: false, message: 'El usuario no existe.' };
 }
 
-/*************** FUNCIONES DEL INVENTARIO KARDEX ****************/
-
-// Obtiene todos los datos necesarios para cargar el Dashboard
-function getAppData() {
+function getAppData(userEmail) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   
-  // Obtener Productos (Añadida captura de Estado)
-  const prodData = ss.getSheetByName(SHEET_PRODUCTS).getDataRange().getValues();
-  const products = prodData.slice(1).map(row => ({
-    id: row[0], nombre: row[1], desc: row[2], estado: row[3] || 'Activo'
-  }));
+  // Productos
+  const sheetProds = ss.getSheetByName(SHEET_PRODS);
+  let products = [];
+  if(sheetProds) {
+    const prodData = sheetProds.getDataRange().getValues();
+    products = prodData.slice(1).filter(row => row[0]).map(row => ({
+      id: String(row[0] || ''), nombre: String(row[1] || ''), desc: String(row[2] || ''), estado: String(row[3] || 'Activo')
+    }));
+  }
   
-  // Obtener Clientes (Añadida captura de Estado)
-  const cliData = ss.getSheetByName(SHEET_CLIENTS).getDataRange().getValues();
-  const clients = cliData.slice(1).map(row => ({
-    id: row[0], nombre: row[1], contacto: row[2], estado: row[3] || 'Activo'
-  }));
+  // Clientes
+  const sheetClients = ss.getSheetByName(SHEET_CLIENTS);
+  let clients = [];
+  if(sheetClients) {
+    const cliData = sheetClients.getDataRange().getValues();
+    clients = cliData.slice(1).filter(row => row[0]).map(row => ({
+      id: String(row[0] || ''), nombre: String(row[1] || ''), contacto: String(row[2] || ''), estado: String(row[3] || 'Activo')
+    }));
+  }
   
-  // Obtener Kardex
   const sheetKardex = ss.getSheetByName(SHEET_KARDEX);
-  const karData = sheetKardex.getDataRange().getValues();
-  const kardex = karData.slice(1).map(row => ({
-    fecha: row[0] instanceof Date ? row[0].toISOString() : String(row[0]),
-    tipo: row[1], prodId: row[2], prodNombre: row[3], cliente: row[4],
-    unds: row[5], c_unitar: row[6], c_total: row[7],
-    saldo_unds: row[8], saldo_c_unitar: row[9], saldo_c_total: row[10], usuario: row[11]
-  })).reverse();
+  let kardex = [];
+  if(sheetKardex) {
+    const kardexData = sheetKardex.getDataRange().getValues();
+    if (kardexData.length > 0) {
+      // Capturar encabezados para mapeo dinámico y evitar errores si las columnas se mueven
+      const h = kardexData[0].map(x => String(x).toLowerCase().trim());
+      const c = {
+        id_mov: h.indexOf('id_mov') > -1 ? h.indexOf('id_mov') : 0,
+        fecha: h.indexOf('fecha') > -1 ? h.indexOf('fecha') : 1,
+        tipo: h.indexOf('tipo') > -1 ? h.indexOf('tipo') : 2,
+        prodId: h.indexOf('producto_id') > -1 ? h.indexOf('producto_id') : 3,
+        prodNombre: h.indexOf('producto_nombre') > -1 ? h.indexOf('producto_nombre') : 4,
+        cliente: h.indexOf('cliente') > -1 ? h.indexOf('cliente') : 5,
+        unds: h.indexOf('unds') > -1 ? h.indexOf('unds') : 6,
+        c_unitar: h.indexOf('c_unitar') > -1 ? h.indexOf('c_unitar') : 7,
+        c_total: h.indexOf('c_total') > -1 ? h.indexOf('c_total') : 8,
+        saldo_unds: h.indexOf('saldo_unds') > -1 ? h.indexOf('saldo_unds') : 9,
+        saldo_c_unitar: h.indexOf('saldo_c_unitar') > -1 ? h.indexOf('saldo_c_unitar') : 10,
+        saldo_c_total: h.indexOf('saldo_c_total') > -1 ? h.indexOf('saldo_c_total') : 11,
+        usuario: h.indexOf('usuario') > -1 ? h.indexOf('usuario') : 12
+      };
+
+      kardex = kardexData.slice(1).filter(row => row[c.id_mov] || row[c.fecha]).map(row => {
+        let parsedDate = row[c.fecha];
+        if (parsedDate instanceof Date) parsedDate = parsedDate.toISOString();
+        else parsedDate = String(parsedDate || '');
+        
+        return {
+          id_mov: String(row[c.id_mov] || ''), 
+          fecha: parsedDate, 
+          tipo: String(row[c.tipo] || ''),
+          prodId: String(row[c.prodId] || ''), 
+          prodNombre: String(row[c.prodNombre] || ''), 
+          cliente: String(row[c.cliente] || ''),
+          unds: Number(row[c.unds]) || 0, 
+          c_unitar: Number(row[c.c_unitar]) || 0, 
+          c_total: Number(row[c.c_total]) || 0,
+          saldo_unds: Number(row[c.saldo_unds]) || 0, 
+          saldo_c_unitar: Number(row[c.saldo_c_unitar]) || 0, 
+          saldo_c_total: Number(row[c.saldo_c_total]) || 0,
+          usuario: String(row[c.usuario] || '')
+        };
+      }).reverse();
+    }
+  }
   
-  // Obtener Usuarios
+  // VERIFICACIÓN DE SEGURIDAD (Backend)
+  let isAdmin = false;
   const sheetUsers = ss.getSheetByName(SHEET_USERS);
   let users = [];
+  
   if(sheetUsers) {
     const userData = sheetUsers.getDataRange().getValues();
-    users = userData.slice(1).map(row => ({
-      id: row[0], nombre: row[2], email: row[3], rol: row[5] || 'Admin', estado: row[6] || 'Activo'
-    }));
-  }
-  
-  // Obtener Roles
-  const sheetRoles = ss.getSheetByName(SHEET_ROLES);
-  let roles = [];
-  if(sheetRoles) {
-    const roleData = sheetRoles.getDataRange().getValues();
-    roles = roleData.slice(1).map(row => ({
-      id: row[0], nombre: row[1], estado: row[2] || 'Activo'
-    }));
-  }
-  
-  return { success: true, products: products, clients: clients, kardex: kardex, users: users, roles: roles };
-}
-
-// Guarda un movimiento de entrada o salida en el Kardex
-function saveMovement(params) {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(10000);
     
-    const { tipo, fecha, prodId, cliente, unds, c_unitar, c_total, userId } = params;
-    
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheetKardex = ss.getSheetByName(SHEET_KARDEX);
-    const karData = sheetKardex.getDataRange().getValues();
-    
-    // Obtener nombre del producto
-    const prodData = ss.getSheetByName(SHEET_PRODUCTS).getDataRange().getValues();
-    let prodNombre = 'Desconocido';
-    for(let i=1; i<prodData.length; i++){
-      if(prodData[i][0] === prodId) { prodNombre = prodData[i][1]; break; }
-    }
-
-    // Buscar el último saldo de ESTE producto específicamente
-    let lastSaldoUnds = 0;
-    let lastSaldoCTotal = 0;
-    
-    for (let i = karData.length - 1; i > 0; i--) {
-      if (karData[i][2] === prodId) { // Coincide el Producto_ID
-        lastSaldoUnds = parseFloat(karData[i][8] || 0);
-        lastSaldoCTotal = parseFloat(karData[i][10] || 0);
+    // 1. Comprobar si el usuario que solicita tiene rol de Admin real en la base de datos
+    for(let i=1; i<userData.length; i++) {
+      if((userData[i][3] || '').toString().toLowerCase() === String(userEmail).toLowerCase() && userData[i][5] === 'Admin' && userData[i][6] !== 'Inactivo') {
+        isAdmin = true;
         break;
       }
     }
-
-    const movUnds = parseFloat(unds);
-    const movCTotal = parseFloat(c_total);
     
-    let newSaldoUnds = 0;
-    let newSaldoCTotal = 0;
-    let newSaldoCUnitar = 0;
+    // 2. Solo enviar datos de usuarios si resultó ser Admin
+    if (isAdmin) {
+      users = userData.slice(1).filter(row => row[0]).map(row => ({
+        id: String(row[0] || ''), nombre: String(row[2] || ''), email: String(row[3] || ''), rol: String(row[5] || ''), estado: String(row[6] || 'Activo')
+      }));
+    }
+  }
 
-    // FÓRMULAS DE KARDEX (Promedio Ponderado)
-    if (tipo === 'Entrada') {
-      newSaldoUnds = lastSaldoUnds + movUnds;
-      newSaldoCTotal = lastSaldoCTotal + movCTotal;
-    } else if (tipo === 'Salida') {
-      // Validar stock
-      if (movUnds > lastSaldoUnds) {
-        return { success: false, message: 'Stock insuficiente para esta salida.' };
+  // Roles (Solo para Admin)
+  const sheetRoles = ss.getSheetByName(SHEET_ROLES);
+  let roles = [];
+  if(sheetRoles && isAdmin) {
+    const roleData = sheetRoles.getDataRange().getValues();
+    roles = roleData.slice(1).filter(row => row[0]).map(row => ({
+      id: String(row[0] || ''), nombre: String(row[1] || ''), estado: String(row[2] || 'Activo')
+    }));
+  }
+  
+  // Logs (Solo para Admin)
+  const sheetLogs = ss.getSheetByName(SHEET_LOGS);
+  let logs = [];
+  if(sheetLogs && isAdmin) {
+    const logData = sheetLogs.getDataRange().getValues();
+    logs = logData.slice(1).filter(row => row[0]).map(row => {
+      let logDate = row[0];
+      if (logDate instanceof Date) logDate = logDate.toISOString();
+      else logDate = String(logDate || '');
+      
+      return {
+        fecha: logDate, usuario: String(row[1] || ''), accion: String(row[2] || ''), detalle: String(row[3] || '')
+      };
+    }).reverse();
+  }
+  
+  const response = { success: true, products: products, clients: clients, kardex: kardex, users: users, roles: roles, logs: logs };
+  // La clave para evitar el error "null" es forzar la sanitización completa:
+  return JSON.parse(JSON.stringify(response));
+}
+
+function saveMovement(params) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_KARDEX);
+  
+  const id_mov = 'MOV-' + Date.now();
+  const { tipo, fecha, prodId, cliente, unds, c_unitar, c_total, userEmail } = params;
+  
+  const qUnds = parseFloat(unds);
+  const qCUnitar = parseFloat(c_unitar);
+  const qCTotal = parseFloat(c_total);
+  
+  // Encontrar el producto
+  const pSheet = ss.getSheetByName(SHEET_PRODS);
+  const pData = pSheet.getDataRange().getValues();
+  let prodNombre = "Desconocido";
+  for(let i=1; i<pData.length; i++) {
+    if(pData[i][0] == prodId) { prodNombre = pData[i][1]; break; }
+  }
+
+  // Calcular saldos (buscar último movimiento de este producto)
+  const kData = sheet.getDataRange().getValues();
+  let last_saldo_unds = 0, last_saldo_c_total = 0;
+  
+  for(let i = kData.length - 1; i >= 1; i--) {
+    if(kData[i][3] == prodId) {
+      last_saldo_unds = parseFloat(kData[i][9]);
+      last_saldo_c_total = parseFloat(kData[i][11]);
+      break;
+    }
+  }
+
+  let new_saldo_unds = 0, new_saldo_c_total = 0, new_saldo_c_unitar = 0;
+  
+  if(tipo === 'Entrada') {
+    new_saldo_unds = last_saldo_unds + qUnds;
+    new_saldo_c_total = last_saldo_c_total + qCTotal;
+  } else {
+    if(qUnds > last_saldo_unds) return { success: false, message: 'Stock insuficiente para esta salida.' };
+    new_saldo_unds = last_saldo_unds - qUnds;
+    new_saldo_c_total = last_saldo_c_total - qCTotal;
+  }
+  
+  if(new_saldo_unds > 0) {
+    new_saldo_c_unitar = new_saldo_c_total / new_saldo_unds;
+  }
+  
+  sheet.appendRow([
+    id_mov, fecha, tipo, prodId, prodNombre, cliente, 
+    qUnds, qCUnitar, qCTotal, 
+    new_saldo_unds, new_saldo_c_unitar, new_saldo_c_total,
+    userEmail
+  ]);
+  
+  registrarLog(userEmail, "MOVIMIENTO", `Registró ${tipo} de ${qUnds} unds para ${prodNombre}`);
+  return { success: true, message: 'Movimiento registrado correctamente.' };
+}
+
+function saveProduct(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PRODS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0].toString().toLowerCase() === data.id.toLowerCase()) return { success: false, message: 'El ID del producto ya existe.' };
+  }
+  sheet.appendRow([data.id.toUpperCase(), data.nombre, data.descripcion, 'Activo']);
+  registrarLog(data.userEmail, "CREAR_PRODUCTO", `Producto creado: ${data.nombre} (${data.id})`);
+  return { success: true, message: 'Producto guardado exitosamente.' };
+}
+
+function updateProduct(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PRODS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === data.id) {
+      sheet.getRange(i+1, 2).setValue(data.nombre);
+      sheet.getRange(i+1, 3).setValue(data.descripcion);
+      registrarLog(data.userEmail, "EDITAR_PRODUCTO", `Producto modificado: ${data.nombre} (${data.id})`);
+      return { success: true, message: 'Producto actualizado.' };
+    }
+  }
+  return { success: false, message: 'Producto no encontrado.' };
+}
+
+function deleteProduct(id, userEmail) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_PRODS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === id) {
+      sheet.getRange(i+1, 4).setValue('Inactivo'); // Soft Delete
+      registrarLog(userEmail, "ELIMINAR_PRODUCTO", `Producto desactivado: ${id}`);
+      return { success: true, message: 'Producto desactivado (Oculto).' };
+    }
+  }
+  return { success: false, message: 'Producto no encontrado.' };
+}
+
+function saveClient(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_CLIENTS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0].toString().toLowerCase() === data.id.toLowerCase()) return { success: false, message: 'El ID / NIT ya existe.' };
+  }
+  sheet.appendRow([data.id.toUpperCase(), data.nombre, data.contacto, 'Activo']);
+  registrarLog(data.userEmail, "CREAR_CLIENTE", `Cliente creado: ${data.nombre}`);
+  return { success: true, message: 'Cliente guardado exitosamente.' };
+}
+
+function updateClient(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_CLIENTS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === data.id) {
+      sheet.getRange(i+1, 2).setValue(data.nombre);
+      sheet.getRange(i+1, 3).setValue(data.contacto);
+      registrarLog(data.userEmail, "EDITAR_CLIENTE", `Cliente modificado: ${data.nombre}`);
+      return { success: true, message: 'Cliente actualizado.' };
+    }
+  }
+  return { success: false, message: 'Cliente no encontrado.' };
+}
+
+function deleteClient(id, userEmail) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_CLIENTS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === id) {
+      sheet.getRange(i+1, 4).setValue('Inactivo'); // Soft Delete
+      registrarLog(userEmail, "ELIMINAR_CLIENTE", `Cliente desactivado: ${id}`);
+      return { success: true, message: 'Cliente desactivado (Oculto).' };
+    }
+  }
+  return { success: false, message: 'Cliente no encontrado.' };
+}
+
+function saveUser(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if((rows[i][3] || '').toString().toLowerCase() === data.email.toLowerCase()) {
+      return { success: false, message: 'El correo electrónico ya existe.' };
+    }
+  }
+  const userId = generateUserId();
+  const encryptedPassword = encryptPassword(data.password);
+  sheet.appendRow([userId, new Date(), data.nombre, data.email.toLowerCase(), encryptedPassword, data.rol, 'Activo']);
+  
+  registrarLog(data.userEmail, "CREAR_USUARIO", `Nuevo usuario creado: ${data.email} (${data.rol})`);
+  return { success: true, message: 'Usuario creado correctamente.' };
+}
+
+function updateUser(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
+  const rows = sheet.getDataRange().getValues();
+  
+  // Verificar si el nuevo correo se cruza con alguien más
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] !== data.id && (rows[i][3] || '').toString().toLowerCase() === data.email.toLowerCase() && rows[i][6] !== 'Inactivo') {
+      return { success: false, message: 'Ese correo electrónico ya está en uso por otra persona.' };
+    }
+  }
+
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === data.id) {
+      sheet.getRange(i+1, 3).setValue(data.nombre);
+      sheet.getRange(i+1, 4).setValue(data.email.toLowerCase());
+      sheet.getRange(i+1, 6).setValue(data.rol);
+      
+      // Solo encriptar y actualizar la contraseña si el admin escribió una nueva
+      if(data.password && data.password.trim() !== '') {
+        sheet.getRange(i+1, 5).setValue(encryptPassword(data.password));
       }
-      newSaldoUnds = lastSaldoUnds - movUnds;
-      newSaldoCTotal = lastSaldoCTotal - movCTotal;
-    }
-
-    // Calcular nuevo costo unitario promedio (Evitar división por 0)
-    if (newSaldoUnds > 0) {
-      newSaldoCUnitar = newSaldoCTotal / newSaldoUnds;
-    } else {
-      newSaldoCUnitar = 0; 
-      newSaldoCTotal = 0; // Ajuste para limpiar decimales basura si el stock es 0
-    }
-
-    // Guardar Fila
-    sheetKardex.appendRow([
-      fecha, tipo, prodId, prodNombre, cliente,
-      movUnds, parseFloat(c_unitar), movCTotal,
-      newSaldoUnds, newSaldoCUnitar, newSaldoCTotal, userId
-    ]);
-
-    return { success: true, message: 'Movimiento registrado correctamente.' };
-
-  } catch (error) {
-    return { success: false, message: 'Error interno: ' + error.message };
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-/*************** GESTIÓN DE PRODUCTOS Y CLIENTES ****************/
-
-// Registra un nuevo producto en la hoja 'Productos'
-function saveProduct(params) {
-  const { id, nombre, descripcion } = params;
-  if (!id || !nombre) return { success: false, message: 'El Código y el Nombre son obligatorios.' };
-  
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_PRODUCTS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      return { success: false, message: 'Ya existe un producto con ese Código ID.' };
+      
+      registrarLog(data.userEmail, "EDITAR_USUARIO", `Datos modificados para: ${data.email} (${data.rol})`);
+      return { success: true, message: 'Cuenta de usuario actualizada exitosamente.' };
     }
   }
-  
-  sheet.appendRow([id.toUpperCase(), nombre, descripcion || '', 'Activo']);
-  return { success: true, message: 'Producto registrado exitosamente.' };
+  return { success: false, message: 'Usuario no encontrado.' };
 }
 
-// Actualiza un producto existente
-function updateProduct(params) {
-  const { id, nombre, descripcion } = params;
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_PRODUCTS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      sheet.getRange(i + 1, 2).setValue(nombre);
-      sheet.getRange(i + 1, 3).setValue(descripcion || '');
-      return { success: true, message: 'Producto actualizado exitosamente.' };
-    }
-  }
-  return { success: false, message: 'Producto no encontrado.' };
-}
-
-// Inactiva (Eliminado suave) un producto
-function deleteProduct(id) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_PRODUCTS);
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      sheet.getRange(i + 1, 4).setValue('Inactivo');
-      return { success: true, message: 'Producto eliminado.' };
-    }
-  }
-  return { success: false, message: 'Producto no encontrado.' };
-}
-
-// Registra un nuevo cliente/proveedor en la hoja 'Clientes'
-function saveClient(params) {
-  const { id, nombre, contacto } = params;
-  if (!id || !nombre) return { success: false, message: 'El ID y el Nombre son obligatorios.' };
-  
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_CLIENTS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      return { success: false, message: 'Ya existe un cliente o proveedor con ese ID.' };
-    }
-  }
-  
-  sheet.appendRow([id.toUpperCase(), nombre, contacto || '', 'Activo']);
-  return { success: true, message: 'Cliente/Proveedor registrado exitosamente.' };
-}
-
-// Actualiza un cliente existente
-function updateClient(params) {
-  const { id, nombre, contacto } = params;
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_CLIENTS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      sheet.getRange(i + 1, 2).setValue(nombre);
-      sheet.getRange(i + 1, 3).setValue(contacto || '');
-      return { success: true, message: 'Cliente actualizado exitosamente.' };
-    }
-  }
-  return { success: false, message: 'Cliente no encontrado.' };
-}
-
-// Inactiva (Eliminado suave) un cliente
-function deleteClient(id) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_CLIENTS);
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === id.toLowerCase()) {
-      sheet.getRange(i + 1, 4).setValue('Inactivo');
-      return { success: true, message: 'Cliente eliminado.' };
-    }
-  }
-  return { success: false, message: 'Cliente no encontrado.' };
-}
-
-/*************** GESTIÓN DE USUARIOS (ADMIN) ****************/
-
-// Guardar un nuevo usuario desde el panel
-function saveUser(params) {
-  const { nombre, email, password, rol } = params;
-  if (!nombre || !email || !password) return { success: false, message: 'Faltan campos obligatorios.' };
-  
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_USERS);
-  const data = sheet.getDataRange().getValues();
-  
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][3].toString().toLowerCase() === email.toLowerCase() && data[i][6] !== 'Inactivo') {
-      return { success: false, message: 'Este correo ya está registrado.' };
-    }
-  }
-  
-  const userId = generateUniqueId('USR');
-  sheet.appendRow([userId, new Date(), nombre, email.toLowerCase(), encryptPassword(password), rol, 'Activo']);
-  
-  return { success: true, message: 'Usuario ' + rol + ' creado exitosamente.' };
-}
-
-// Desactivar un usuario existente (Soft Delete)
-function deleteUser(id) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_USERS);
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString() === id) {
-      sheet.getRange(i + 1, 7).setValue('Inactivo');
-      return { success: true, message: 'Usuario desactivado.' };
+function deleteUser(id, userEmail) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
+  const rows = sheet.getDataRange().getValues();
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === id) {
+      sheet.getRange(i+1, 7).setValue('Inactivo'); // Soft delete
+      registrarLog(userEmail, "ELIMINAR_USUARIO", `Usuario desactivado: ${id}`);
+      return { success: true, message: 'Usuario desactivado exitosamente.' };
     }
   }
   return { success: false, message: 'Usuario no encontrado.' };
