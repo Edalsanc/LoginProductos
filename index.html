@@ -17,7 +17,6 @@
     }
   </script>
   <style>
-    .hidden { display: none !important; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px); }
@@ -91,32 +90,47 @@
   <div id="appContainer" class="hidden min-h-screen flex flex-col fade-in">
     
     <!-- Navbar Superior -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+    <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <!-- Área del Logo -->
         <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md">
+          <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
             <i class="fa-solid fa-boxes-stacked text-lg"></i>
           </div>
-          <h1 class="text-xl font-bold text-gray-800 dark:text-white tracking-tight">Kardex<span class="text-blue-600 dark:text-blue-400">Pro</span></h1>
+          <h1 class="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight">Kardex<span class="text-blue-600 dark:text-blue-400">Pro</span></h1>
         </div>
-        <div class="flex items-center space-x-4">
+        
+        <!-- Acciones y Perfil de Usuario -->
+        <div class="flex items-center gap-2 sm:gap-4">
           <!-- Botón Tema -->
-          <button onclick="toggleTheme()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+          <button onclick="toggleTheme()" title="Cambiar Tema" class="w-9 h-9 rounded-full bg-gray-100/80 dark:bg-gray-800/80 text-gray-600 dark:text-gray-300 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-all shadow-sm">
             <i class="fa-solid fa-moon dark:hidden"></i>
-            <i class="fa-solid fa-sun hidden dark:inline-block"></i>
+            <i class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
           </button>
           
-          <div class="text-right flex items-center space-x-3">
-            <div class="text-right">
-              <p class="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center justify-end space-x-2">
-                <span id="navUserName">Cargando...</span>
-                <i class="fa-solid fa-circle-user text-blue-500"></i>
-              </p>
-              <p id="navUserRole" class="text-xs text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">Rol</p>
+          <!-- Separador Vertical -->
+          <div class="hidden sm:block h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
+          
+          <!-- Contenedor Cápsula (Usuario + Logout) -->
+          <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 py-1.5 px-2 pl-3 sm:pl-4 rounded-full border border-gray-200 dark:border-gray-700/50 shadow-sm transition-colors">
+            
+            <!-- Información Usuario (Siempre visible) -->
+            <div class="flex flex-col items-end mr-1">
+              <span id="navUserName" class="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 leading-none mb-1 truncate max-w-[100px] sm:max-w-none">Cargando...</span>
+              <span id="navUserRole" class="text-[9px] sm:text-[10px] text-blue-600 dark:text-blue-400 font-extrabold uppercase tracking-widest leading-none">Rol</span>
             </div>
-            <button onclick="logout()" title="Cerrar Sesión" class="w-9 h-9 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            
+            <!-- Avatar -->
+            <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 shrink-0">
+              <i class="fa-solid fa-user text-sm"></i>
+            </div>
+            
+            <!-- Botón Cerrar Sesión -->
+            <button onclick="logout()" title="Cerrar Sesión" class="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white dark:hover:bg-red-500 dark:hover:text-white transition-all shrink-0">
+              <i class="fa-solid fa-power-off text-sm"></i>
             </button>
+            
           </div>
         </div>
       </div>
@@ -214,19 +228,28 @@
              </div>
              <div class="overflow-x-auto">
                <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
-                 <thead class="text-xs uppercase bg-gray-800 dark:bg-gray-900 text-white">
+                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
                    <tr>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-700">Fecha</th>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-700">Producto</th>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-700">Cliente / Proveedor</th>
-                     <th colspan="3" class="px-4 py-2 text-center bg-emerald-600 border-r border-gray-700">Entradas</th>
-                     <th colspan="3" class="px-4 py-2 text-center bg-red-500 border-r border-gray-700">Salidas</th>
-                     <th colspan="3" class="px-4 py-2 text-center bg-blue-600">Saldos</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Fecha</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Producto</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Cliente / Prov.</th>
+                     <th colspan="3" class="px-4 py-2 text-center bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border-r border-emerald-200 dark:border-emerald-800">Entradas</th>
+                     <th colspan="3" class="px-4 py-2 text-center bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400 border-r border-rose-200 dark:border-rose-800">Salidas</th>
+                     <th colspan="3" class="px-4 py-2 text-center bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400">Saldos</th>
                    </tr>
-                   <tr class="bg-gray-700 dark:bg-gray-800">
-                     <th class="px-3 py-2 border-r border-gray-600">Unds</th><th class="px-3 py-2 border-r border-gray-600">C. Unitar</th><th class="px-3 py-2 border-r border-gray-600">C. Total</th>
-                     <th class="px-3 py-2 border-r border-gray-600">Unds</th><th class="px-3 py-2 border-r border-gray-600">C. Unitar</th><th class="px-3 py-2 border-r border-gray-600">C. Total</th>
-                     <th class="px-3 py-2 border-r border-gray-600">Unds</th><th class="px-3 py-2 border-r border-gray-600">C. Unitar</th><th class="px-3 py-2">C. Total</th>
+                   <tr>
+                     <!-- Sub-columnas Entradas (Pastel) -->
+                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Total</th>
+                     <!-- Sub-columnas Salidas (Pastel) -->
+                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Total</th>
+                     <!-- Sub-columnas Saldos (Pastel) -->
+                     <th class="px-3 py-2 border-r border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Total</th>
                    </tr>
                  </thead>
                  <tbody id="kardexTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
@@ -801,8 +824,9 @@
           const dFechaObj = new Date(row.fecha);
           const dFecha = isNaN(dFechaObj) ? row.fecha : dFechaObj.toLocaleDateString();
           
-          const badgeClass = e ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300';
-          tbody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-center"><td class="px-3 py-3 text-left font-mono whitespace-nowrap border-r border-gray-200 dark:border-gray-700">${dFecha}</td><td class="px-3 py-3 text-left font-bold border-r border-gray-200 dark:border-gray-700">${row.prodNombre}</td><td class="px-3 py-3 text-left border-r border-gray-200 dark:border-gray-700">${row.cliente} <br><span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${badgeClass}">${row.tipo}</span></td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 ${e?'font-bold text-emerald-600 dark:text-emerald-400':''} border-l border-emerald-100 dark:border-emerald-800/30">${e? row.unds : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10">${e? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 border-r border-emerald-100 dark:border-emerald-800/30 font-bold">${e? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 bg-red-50/50 dark:bg-red-900/10 ${s?'font-bold text-red-600 dark:text-red-400':''}">${s? row.unds : ''}</td><td class="px-3 py-3 bg-red-50/50 dark:bg-red-900/10">${s? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-red-50/50 dark:bg-red-900/10 border-r border-red-100 dark:border-red-800/30 font-bold">${s? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 font-bold text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10">${parseFloat(row.saldo_unds).toFixed(2)}</td><td class="px-3 py-3 bg-blue-50/50 dark:bg-blue-900/10">${fmt.format(row.saldo_c_unitar)}</td><td class="px-3 py-3 font-bold text-blue-800 dark:text-blue-300 bg-blue-50/50 dark:bg-blue-900/10">${fmt.format(row.saldo_c_total)}</td></tr>`;
+          // Cambios de colores: emerald, rose e indigo
+          const badgeClass = e ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300';
+          tbody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-center"><td class="px-3 py-3 text-left font-mono whitespace-nowrap border-r border-gray-200 dark:border-gray-700">${dFecha}</td><td class="px-3 py-3 text-left font-bold border-r border-gray-200 dark:border-gray-700">${row.prodNombre}</td><td class="px-3 py-3 text-left border-r border-gray-200 dark:border-gray-700">${row.cliente} <br><span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${badgeClass}">${row.tipo}</span></td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 ${e?'font-bold text-emerald-600 dark:text-emerald-400':''} border-l border-emerald-100 dark:border-emerald-800/30">${e? row.unds : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10">${e? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 border-r border-emerald-100 dark:border-emerald-800/30 font-bold">${e? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10 ${s?'font-bold text-rose-600 dark:text-rose-400':''}">${s? row.unds : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10">${s? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10 border-r border-rose-100 dark:border-rose-800/30 font-bold">${s? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10">${parseFloat(row.saldo_unds).toFixed(2)}</td><td class="px-3 py-3 bg-indigo-50/50 dark:bg-indigo-900/10">${fmt.format(row.saldo_c_unitar)}</td><td class="px-3 py-3 font-bold text-indigo-800 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/10">${fmt.format(row.saldo_c_total)}</td></tr>`;
         });
       }
       renderPaginationControls('paginationKardex', 'Kardex', currentPageKardex, totalPages);
