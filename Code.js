@@ -4,6 +4,7 @@ const SHEET_CLIENTS = 'Clientes';
 const SHEET_KARDEX = 'Kardex';
 const SHEET_ROLES = 'Roles';
 const SHEET_LOGS = 'Logs';
+const SHEET_FACTURAS = 'Facturas';
 const SECRET_KEY = 'MiClaveSecretaSuperSegura_2024!';
 
 function setupDatabase() {
@@ -70,6 +71,22 @@ function setupDatabase() {
     shLogs = ss.insertSheet(SHEET_LOGS);
     shLogs.appendRow(['Fecha_Hora', 'Usuario_Email', 'Accion', 'Detalle']);
     shLogs.getRange('A1:D1').setFontWeight('bold').setBackground('#f3f4f6');
+  }
+
+  // 7. Facturas (NUEVO MÓDULO)
+  let shFacturas = ss.getSheetByName(SHEET_FACTURAS);
+  if (!shFacturas) {
+    shFacturas = ss.insertSheet(SHEET_FACTURAS);
+    shFacturas.appendRow(['ID', 'Numero_Factura', 'Fecha_Factura', 'Descripcion', 'Proveedor_Cliente', 'Observacion', 'Fecha_Creacion', 'Estado']);
+    shFacturas.getRange('A1:H1').setFontWeight('bold').setBackground('#f3f4f6');
+  }
+
+  // Asegurar que Kardex tenga la columna Factura_ID para la relación histórica
+  if (shKardex) {
+    const headers = shKardex.getRange(1, 1, 1, shKardex.getLastColumn()).getValues()[0];
+    if (headers.indexOf('Factura_ID') === -1 && headers.indexOf('factura_id') === -1) {
+      shKardex.getRange(1, headers.length + 1).setValue('Factura_ID').setFontWeight('bold').setBackground('#f3f4f6');
+    }
   }
 }
 
@@ -216,7 +233,8 @@ function getAppData(userEmail) {
         saldo_unds: h.indexOf('saldo_unds') > -1 ? h.indexOf('saldo_unds') : 9,
         saldo_c_unitar: h.indexOf('saldo_c_unitar') > -1 ? h.indexOf('saldo_c_unitar') : 10,
         saldo_c_total: h.indexOf('saldo_c_total') > -1 ? h.indexOf('saldo_c_total') : 11,
-        usuario: h.indexOf('usuario') > -1 ? h.indexOf('usuario') : 12
+        usuario: h.indexOf('usuario') > -1 ? h.indexOf('usuario') : 12,
+        facturaId: h.indexOf('factura_id') > -1 ? h.indexOf('factura_id') : 13
       };
 
       kardex = kardexData.slice(1).filter(row => row[c.id_mov] || row[c.fecha]).map(row => {
@@ -237,10 +255,32 @@ function getAppData(userEmail) {
           saldo_unds: Number(row[c.saldo_unds]) || 0, 
           saldo_c_unitar: Number(row[c.saldo_c_unitar]) || 0, 
           saldo_c_total: Number(row[c.saldo_c_total]) || 0,
-          usuario: String(row[c.usuario] || '')
+          usuario: String(row[c.usuario] || ''),
+          facturaId: String(row[c.facturaId] || '')
         };
       }).reverse();
     }
+  }
+
+  // Facturas
+  const sheetFacturas = ss.getSheetByName(SHEET_FACTURAS);
+  let facturas = [];
+  if(sheetFacturas) {
+    const factData = sheetFacturas.getDataRange().getValues();
+    facturas = factData.slice(1).filter(row => row[0]).map(row => {
+      let parsedDate = row[2];
+      if (parsedDate instanceof Date) parsedDate = parsedDate.toISOString();
+      else parsedDate = String(parsedDate || '');
+      return {
+        id: String(row[0] || ''), 
+        numero: String(row[1] || ''), 
+        fecha: parsedDate, 
+        descripcion: String(row[3] || ''), 
+        cliente: String(row[4] || ''), 
+        observacion: String(row[5] || ''), 
+        estado: String(row[7] || 'Activa')
+      };
+    }).reverse();
   }
   
   // VERIFICACIÓN DE SEGURIDAD (Backend)
@@ -293,7 +333,7 @@ function getAppData(userEmail) {
     }).reverse();
   }
   
-  const response = { success: true, products: products, clients: clients, kardex: kardex, users: users, roles: roles, logs: logs };
+  const response = { success: true, products: products, clients: clients, kardex: kardex, users: users, roles: roles, logs: logs, facturas: facturas };
   // La clave para evitar el error "null" es forzar la sanitización completa:
   return JSON.parse(JSON.stringify(response));
 }
@@ -303,7 +343,7 @@ function saveMovement(params) {
   const sheet = ss.getSheetByName(SHEET_KARDEX);
   
   const id_mov = 'MOV-' + Date.now();
-  const { tipo, fecha, prodId, cliente, unds, c_unitar, c_total, userEmail } = params;
+  const { tipo, fecha, prodId, cliente, unds, c_unitar, c_total, userEmail, facturaId } = params;
   
   const qUnds = parseFloat(unds);
   const qCUnitar = parseFloat(c_unitar);
@@ -348,7 +388,7 @@ function saveMovement(params) {
     id_mov, fecha, tipo, prodId, prodNombre, cliente, 
     qUnds, qCUnitar, qCTotal, 
     new_saldo_unds, new_saldo_c_unitar, new_saldo_c_total,
-    userEmail
+    userEmail, facturaId || ''
   ]);
   
   registrarLog(userEmail, "MOVIMIENTO", `Registró ${tipo} de ${qUnds} unds para ${prodNombre}`);
@@ -476,15 +516,57 @@ function updateUser(data) {
   return { success: false, message: 'Usuario no encontrado.' };
 }
 
-function deleteUser(id, userEmail) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_USERS);
+// --- MÓDULO FACTURAS ---
+
+function saveFactura(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_FACTURAS);
+  const rows = sheet.getDataRange().getValues();
+  
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][1].toString().trim().toLowerCase() === data.numero.trim().toLowerCase() && rows[i][7] !== 'Anulada') {
+      return { success: false, message: 'El número de factura ya existe y está activo.' };
+    }
+  }
+  
+  const id = 'FAC-' + Date.now();
+  sheet.appendRow([id, data.numero, data.fecha, data.descripcion, data.cliente, data.observacion, new Date(), 'Activa']);
+  registrarLog(data.userEmail, "CREAR_FACTURA", `Factura registrada: N° ${data.numero}`);
+  return { success: true, message: 'Factura registrada exitosamente.' };
+}
+
+function updateFactura(data) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_FACTURAS);
+  const rows = sheet.getDataRange().getValues();
+  
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] !== data.id && rows[i][1].toString().trim().toLowerCase() === data.numero.trim().toLowerCase() && rows[i][7] !== 'Anulada') {
+      return { success: false, message: 'El número de factura ya está en uso por otra factura activa.' };
+    }
+  }
+
+  for(let i=1; i<rows.length; i++) {
+    if(rows[i][0] === data.id) {
+      sheet.getRange(i+1, 2).setValue(data.numero);
+      sheet.getRange(i+1, 3).setValue(data.fecha);
+      sheet.getRange(i+1, 4).setValue(data.descripcion);
+      sheet.getRange(i+1, 5).setValue(data.cliente);
+      sheet.getRange(i+1, 6).setValue(data.observacion);
+      registrarLog(data.userEmail, "EDITAR_FACTURA", `Factura actualizada: N° ${data.numero}`);
+      return { success: true, message: 'Datos de la factura actualizados.' };
+    }
+  }
+  return { success: false, message: 'Factura no encontrada.' };
+}
+
+function deleteFactura(id, userEmail) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_FACTURAS);
   const rows = sheet.getDataRange().getValues();
   for(let i=1; i<rows.length; i++) {
     if(rows[i][0] === id) {
-      sheet.getRange(i+1, 7).setValue('Inactivo'); // Soft delete
-      registrarLog(userEmail, "ELIMINAR_USUARIO", `Usuario desactivado: ${id}`);
-      return { success: true, message: 'Usuario desactivado exitosamente.' };
+      sheet.getRange(i+1, 8).setValue('Anulada');
+      registrarLog(userEmail, "ANULAR_FACTURA", `Factura anulada: ID ${id}`);
+      return { success: true, message: 'Factura anulada correctamente. Sus movimientos se conservarán.' };
     }
   }
-  return { success: false, message: 'Usuario no encontrado.' };
+  return { success: false, message: 'Factura no encontrada.' };
 }

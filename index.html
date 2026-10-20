@@ -22,6 +22,13 @@
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    
+    /* Animaciones para Toasts (Notificaciones) */
+    .toast-enter { animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .toast-leave { animation: toastFadeOut 0.3s ease-in forwards; }
+    @keyframes toastSlideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes toastFadeOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
     /* Estilos para el scroll del sidebar */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -29,25 +36,49 @@
     .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
   </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen antialiased font-sans transition-colors duration-300">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen antialiased font-sans transition-colors duration-300 relative">
+
+  <!-- ========================================== -->
+  <!-- SISTEMA DE UI CUSTOM (Toasts, Modales, Loaders) -->
+  <!-- ========================================== -->
+  
+  <!-- Contenedor Toasts -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-[10000] flex flex-col gap-3 w-80 max-w-[calc(100vw-2.5rem)] pointer-events-none"></div>
+
+  <!-- Global Loader Overlay -->
+  <div id="globalLoaderOverlay" class="hidden fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm fade-in">
+    <div class="w-16 h-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex items-center justify-center mb-4 border border-gray-100 dark:border-gray-700">
+      <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-600 dark:text-blue-400"></i>
+    </div>
+    <p id="globalLoaderText" class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider animate-pulse">Sincronizando datos...</p>
+  </div>
+
+  <!-- Confirm Modal Custom -->
+  <div id="customConfirmModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-gray-900/50 dark:bg-black/60 backdrop-blur-sm fade-in">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 dark:border-gray-700 transform transition-all scale-100">
+      <div class="p-6 text-center">
+        <!-- Icono Dinámico -->
+        <div id="confirmIconDiv" class="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center text-3xl mb-4">
+          <i id="confirmIcon" class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <!-- Textos -->
+        <h3 id="confirmTitle" class="text-xl font-bold text-gray-800 dark:text-white mb-2">¿Confirmar?</h3>
+        <p id="confirmMessage" class="text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Esta acción no se puede deshacer.</p>
+        <!-- Botones -->
+        <div class="flex space-x-3">
+          <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-sm transition">Cancelar</button>
+          <button id="confirmBtnOk" onclick="executeConfirm()" class="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm transition shadow-sm text-white">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ========================================== -->
   <!-- LOGIN (Centrado en pantalla completa)      -->
   <!-- ========================================== -->
   <div id="loginView" class="min-h-screen flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-700 fade-in">
-      
-      <!-- Alerta Login -->
-      <div id="loginAlertBox" class="hidden px-5 py-3 text-sm font-medium transition-all duration-300 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i id="loginAlertIcon" class="fa-solid fa-circle-exclamation text-base"></i>
-          <span id="loginAlertMessage">Mensaje</span>
-        </div>
-        <button onclick="hideLoginAlert()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
       <div class="p-8 text-center">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl mb-4 shadow-inner">
           <i class="fa-solid fa-boxes-stacked text-2xl"></i>
@@ -115,7 +146,7 @@
           <!-- Contenedor Cápsula (Usuario + Logout) -->
           <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 py-1.5 px-2 pl-3 sm:pl-4 rounded-full border border-gray-200 dark:border-gray-700/50 shadow-sm transition-colors">
             
-            <!-- Información Usuario (Siempre visible) -->
+            <!-- Información Usuario -->
             <div class="flex flex-col items-end mr-1">
               <span id="navUserName" class="text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 leading-none mb-1 truncate max-w-[100px] sm:max-w-none">Cargando...</span>
               <span id="navUserRole" class="text-[9px] sm:text-[10px] text-blue-600 dark:text-blue-400 font-extrabold uppercase tracking-widest leading-none">Rol</span>
@@ -149,6 +180,9 @@
           </button>
           <button type="button" onclick="switchTab('kardex')" class="tab-btn w-full text-left px-4 py-2.5 rounded-lg font-medium text-sm transition-colors flex items-center space-x-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             <i class="fa-solid fa-table-list w-5 text-center"></i> <span>Tabla Kardex</span>
+          </button>
+          <button type="button" onclick="switchTab('facturas')" class="tab-btn w-full text-left px-4 py-2.5 rounded-lg font-medium text-sm transition-colors flex items-center space-x-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> <span>Facturas</span>
           </button>
           <button type="button" onclick="switchTab('movimiento')" class="tab-btn w-full text-left px-4 py-2.5 rounded-lg font-medium text-sm transition-colors flex items-center space-x-3 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
             <i class="fa-solid fa-circle-plus w-5 text-center"></i> <span>Registrar Movimiento</span>
@@ -198,14 +232,12 @@
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col">
               <h3 class="text-base font-bold text-gray-800 dark:text-white mb-4"><i class="fa-solid fa-chart-bar text-blue-500 mr-2"></i>Valor del Stock por Producto (Top 10)</h3>
-              <!-- Solución: Contenedor relative con altura fija (h-64) -->
               <div class="relative w-full h-64 sm:h-72 flex-1">
                 <canvas id="barChart"></canvas>
               </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col items-center">
               <h3 class="text-base font-bold text-gray-800 dark:text-white mb-4 w-full"><i class="fa-solid fa-chart-pie text-purple-500 mr-2"></i>Distribución de Unidades</h3>
-              <!-- Solución: Contenedor relative con altura fija (h-64) -->
               <div class="relative w-full max-w-[300px] h-64 sm:h-72 flex-1">
                 <canvas id="pieChart"></canvas>
               </div>
@@ -219,37 +251,33 @@
              <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <div class="flex items-center space-x-3">
                   <i class="fa-solid fa-filter text-gray-400"></i>
-                  <!-- Reiniciamos a la página 1 cuando el usuario filtra -->
                   <select id="kardexFilter" class="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-sm rounded-lg px-3 py-1.5 focus:ring-blue-500 dark:text-white outline-none" onchange="currentPageKardex = 1; renderKardexTable()">
                     <option value="ALL">Todos los Productos</option>
                   </select>
                 </div>
-                <button onclick="syncData()" class="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"><i class="fa-solid fa-rotate-right"></i></button>
+                <button onclick="syncData(false)" class="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"><i class="fa-solid fa-rotate-right"></i></button>
              </div>
              <div class="overflow-x-auto">
                <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
-                 <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-300">
+                 <thead class="text-xs uppercase text-gray-700 dark:text-gray-300">
                    <tr>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Fecha</th>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Producto</th>
-                     <th rowspan="2" class="px-4 py-3 border-r border-gray-200 dark:border-gray-700 align-middle">Cliente / Prov.</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-b border-gray-200 dark:border-gray-700 align-middle">Fecha</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-b border-gray-200 dark:border-gray-700 align-middle">Producto</th>
+                     <th rowspan="2" class="px-4 py-3 border-r border-b border-gray-200 dark:border-gray-700 align-middle">Cliente / Prov.</th>
                      <th colspan="3" class="px-4 py-2 text-center bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 border-r border-emerald-200 dark:border-emerald-800">Entradas</th>
                      <th colspan="3" class="px-4 py-2 text-center bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400 border-r border-rose-200 dark:border-rose-800">Salidas</th>
-                     <th colspan="3" class="px-4 py-2 text-center bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400">Saldos</th>
+                     <th colspan="3" class="px-4 py-2 text-center bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-400 border-b border-indigo-200 dark:border-indigo-800">Saldos</th>
                    </tr>
                    <tr>
-                     <!-- Sub-columnas Entradas (Pastel) -->
-                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">Unds</th>
-                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Unitar</th>
-                     <th class="px-3 py-2 border-r border-t border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Total</th>
-                     <!-- Sub-columnas Salidas (Pastel) -->
-                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">Unds</th>
-                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Unitar</th>
-                     <th class="px-3 py-2 border-r border-t border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Total</th>
-                     <!-- Sub-columnas Saldos (Pastel) -->
-                     <th class="px-3 py-2 border-r border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">Unds</th>
-                     <th class="px-3 py-2 border-r border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Unitar</th>
-                     <th class="px-3 py-2 border-t border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Total</th>
+                     <th class="px-3 py-2 border-r border-b border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-b border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-r border-b border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400">C. Total</th>
+                     <th class="px-3 py-2 border-r border-b border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-b border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-r border-b border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400">C. Total</th>
+                     <th class="px-3 py-2 border-r border-b border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">Unds</th>
+                     <th class="px-3 py-2 border-r border-b border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Unitar</th>
+                     <th class="px-3 py-2 border-b border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400">C. Total</th>
                    </tr>
                  </thead>
                  <tbody id="kardexTableBody" class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
@@ -260,6 +288,110 @@
              <!-- Paginación Kardex -->
              <div id="paginationKardex" class="hidden p-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50"></div>
            </div>
+        </div>
+
+        <!-- Pestaña: FACTURAS -->
+        <div id="facturasTab" class="tab-content hidden fade-in">
+          <div id="facturasMainSection" class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-6xl mx-auto space-y-8">
+            <div>
+              <h2 id="titleFacForm" class="text-xl font-bold text-gray-800 dark:text-white mb-6 border-b border-gray-200 dark:border-gray-700 pb-3"><i class="fa-solid fa-file-invoice-dollar mr-2 text-emerald-500"></i>Registrar Factura</h2>
+              <form id="facForm" class="space-y-5" onsubmit="event.preventDefault(); submitNewFactura();">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                  <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-1">N° Factura</label>
+                    <input type="text" id="newFacNum" required placeholder="Ej. FAC-1001" class="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none font-mono font-bold uppercase disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:text-gray-500">
+                  </div>
+                  <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-1">Fecha Emisión</label>
+                    <input type="date" id="newFacFecha" required class="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none">
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-1">Cliente / Proveedor</label>
+                    <select id="newFacCliente" class="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none"></select>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-1">Descripción</label>
+                    <input type="text" id="newFacDesc" required placeholder="Concepto de la factura..." class="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-1">Observación (Opcional)</label>
+                    <input type="text" id="newFacObs" class="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none">
+                  </div>
+                </div>
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                  <button type="submit" id="btnNewFac" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition flex justify-center items-center text-sm uppercase shadow-sm">
+                    <span id="btnNewFacText"><i class="fa-solid fa-plus mr-2"></i>Guardar Factura</span>
+                    <i id="btnNewFacSpin" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
+                  </button>
+                  <button type="button" id="btnCancelFac" onclick="cancelEditFactura()" class="hidden bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 text-gray-700 dark:text-gray-200 font-bold py-3 px-6 rounded-xl transition text-sm uppercase">Cancelar</button>
+                </div>
+              </form>
+            </div>
+            
+            <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+               <h3 class="font-bold text-gray-800 dark:text-white mb-4"><i class="fa-solid fa-list text-emerald-500 mr-2"></i>Facturas Registradas</h3>
+               <div class="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-t-lg">
+                 <table class="min-w-full text-sm text-left">
+                   <thead class="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                     <tr><th class="px-4 py-3">Número</th><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Cliente / Prov.</th><th class="px-4 py-3">Descripción</th><th class="px-4 py-3 text-center">Estado</th><th class="px-4 py-3 text-center">Acciones</th></tr>
+                   </thead>
+                   <tbody id="tableFacturasBody" class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300"></tbody>
+                 </table>
+               </div>
+               <div id="paginationFacturas" class="hidden p-4 border border-t-0 border-gray-100 dark:border-gray-700 rounded-b-lg flex justify-between items-center bg-gray-50 dark:bg-gray-900/50"></div>
+            </div>
+          </div>
+
+          <!-- DETAIL SECTION: Financials and Movements -->
+          <div id="facturaDetailSection" class="hidden bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-6xl mx-auto space-y-6">
+             <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
+                <div>
+                   <button onclick="closeFacturaDetails()" class="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white mb-2 text-sm font-semibold transition-colors"><i class="fa-solid fa-arrow-left mr-2"></i>Volver al listado</button>
+                   <h2 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center"><i class="fa-solid fa-file-lines mr-3 text-emerald-500"></i>Detalle de Factura: <span id="detFacNum" class="ml-2 font-mono text-emerald-600 dark:text-emerald-400"></span></h2>
+                </div>
+                <button id="btnFacAddMov" onclick="" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow transition-colors"><i class="fa-solid fa-plus mr-2"></i>Agregar Movimiento</button>
+             </div>
+             
+             <!-- Totals Overview -->
+             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div><p class="text-xs font-bold text-gray-500 uppercase">Fecha Emisión</p><p id="detFacFecha" class="font-semibold text-gray-800 dark:text-white font-mono"></p></div>
+                <div><p class="text-xs font-bold text-gray-500 uppercase">Cliente / Proveedor</p><p id="detFacCliente" class="font-semibold text-gray-800 dark:text-white truncate"></p></div>
+                <div><p class="text-xs font-bold text-gray-500 uppercase">Descripción</p><p id="detFacDesc" class="font-semibold text-gray-800 dark:text-white truncate"></p></div>
+                <div><p class="text-xs font-bold text-gray-500 uppercase">Estado</p><p id="detFacEstado" class="font-semibold uppercase tracking-wider text-sm"></p></div>
+             </div>
+
+             <!-- Financial Cards -->
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-5 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800/30 dark:bg-emerald-900/10 shadow-sm">
+                   <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Suma Entradas (Valor)</p>
+                   <h3 id="detFacTotalIn" class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">$ 0</h3>
+                </div>
+                <div class="p-5 rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-800/30 dark:bg-rose-900/10 shadow-sm">
+                   <p class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider mb-1">Suma Salidas (Valor)</p>
+                   <h3 id="detFacTotalOut" class="text-2xl font-bold text-rose-700 dark:text-rose-300">$ 0</h3>
+                </div>
+                <div class="p-5 rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800/30 dark:bg-blue-900/10 shadow-sm">
+                   <p class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Diferencia / Balance</p>
+                   <h3 id="detFacBalance" class="text-2xl font-bold text-blue-700 dark:text-blue-300">$ 0</h3>
+                </div>
+             </div>
+
+             <!-- Associated Movements Table -->
+             <div>
+                <h3 class="font-bold text-gray-800 dark:text-white mb-3 text-sm uppercase tracking-wider"><i class="fa-solid fa-list-check text-blue-500 mr-2"></i>Movimientos Asociados a esta factura</h3>
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                   <table class="min-w-full text-sm text-left">
+                      <thead class="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                         <tr><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Tipo</th><th class="px-4 py-3">Producto</th><th class="px-4 py-3 text-right">Unidades</th><th class="px-4 py-3 text-right">C. Total</th></tr>
+                      </thead>
+                      <tbody id="detFacMovsBody" class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-900/30 text-gray-700 dark:text-gray-300">
+                      </tbody>
+                   </table>
+                </div>
+             </div>
+          </div>
         </div>
 
         <!-- Pestaña: REGISTRAR MOVIMIENTO -->
@@ -286,7 +418,8 @@
                   <input type="date" id="movFecha" required class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none">
                 </div>
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                   <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-2">Producto</label>
                   <select id="movProducto" required class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none"></select>
@@ -294,6 +427,10 @@
                 <div>
                   <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-2">Cliente / Proveedor</label>
                   <select id="movCliente" required class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none"></select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-600 dark:text-gray-300 uppercase mb-2">Factura Asociada</label>
+                  <select id="movFactura" class="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white rounded-lg text-sm outline-none"></select>
                 </div>
               </div>
               
@@ -517,19 +654,102 @@
 
     let inactivityInterval;
     let currentUser = null;
-    let globalProducts = [], globalClients = [], globalKardex = [], globalUsers = [], globalRoles = [], globalLogs = [];
-    let chartStock = null, chartPie = null;
+    let globalProducts = [], globalClients = [], globalKardex = [], globalUsers = [], globalRoles = [], globalLogs = [], globalFacturas = [];
+    let chart1 = null, chart2 = null;
     
-    let isEditingProduct = false, isEditingClient = false, isEditingUser = false;
-    let currentEditUserId = null;
+    let isEditingProduct = false, isEditingClient = false, isEditingUser = false, isEditingFactura = false;
+    let currentEditUserId = null, currentFacturaId = null;
 
     /* ========== ESTADOS DE PAGINACIÓN ========== */
     const ITEMS_PER_PAGE = 20;
-    let currentPageKardex = 1;
-    let currentPageProducts = 1;
-    let currentPageClients = 1;
-    let currentPageUsers = 1;
-    let currentPageLogs = 1;
+    let currentPageKardex = 1, currentPageProducts = 1, currentPageClients = 1, currentPageUsers = 1, currentPageLogs = 1, currentPageFacturas = 1;
+
+
+    /* ========================================================================= */
+    /* ========== COMPONENTES DE UI CUSTOM (TOASTS, MODALES, LOADERS) ========== */
+    /* ========================================================================= */
+
+    // 1. TOASTS (Reemplazan a los alert nativos)
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let icon = 'fa-circle-info', bgColor = 'bg-blue-50 dark:bg-blue-900/30', textColor = 'text-blue-700 dark:text-blue-400', borderColor = 'border-blue-200 dark:border-blue-800';
+      
+      if (type === 'success') { icon = 'fa-circle-check'; bgColor = 'bg-emerald-50 dark:bg-emerald-900/30'; textColor = 'text-emerald-700 dark:text-emerald-400'; borderColor = 'border-emerald-200 dark:border-emerald-800'; }
+      else if (type === 'error') { icon = 'fa-circle-xmark'; bgColor = 'bg-rose-50 dark:bg-rose-900/30'; textColor = 'text-rose-700 dark:text-rose-400'; borderColor = 'border-rose-200 dark:border-rose-800'; }
+      else if (type === 'warning') { icon = 'fa-triangle-exclamation'; bgColor = 'bg-amber-50 dark:bg-amber-900/30'; textColor = 'text-amber-700 dark:text-amber-400'; borderColor = 'border-amber-200 dark:border-amber-800'; }
+
+      toast.className = `toast-enter flex items-start p-4 rounded-xl border ${borderColor} ${bgColor} shadow-lg pointer-events-auto transition-all`;
+      toast.innerHTML = `
+          <i class="fa-solid ${icon} ${textColor} mt-0.5 mr-3 text-lg"></i>
+          <div class="flex-1 text-sm font-medium ${textColor}">${message}</div>
+          <button class="${textColor} hover:opacity-70 ml-2" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+          toast.classList.replace('toast-enter', 'toast-leave');
+          setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Retrocompatibilidad con la antigua función
+    function showAppAlert(msg, type) {
+      showToast(msg, type); 
+    }
+
+    // 2. MODAL DE CONFIRMACIÓN (Reemplaza a confirm() nativo)
+    let confirmCallback = null;
+    function showConfirmModal(title, message, onConfirm, isDanger = true) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMessage').textContent = message;
+      
+      const iconDiv = document.getElementById('confirmIconDiv');
+      const iconEl = document.getElementById('confirmIcon');
+      const btnOk = document.getElementById('confirmBtnOk');
+
+      if(isDanger) {
+          iconDiv.className = 'w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center text-3xl mb-4';
+          iconEl.className = 'fa-solid fa-triangle-exclamation';
+          btnOk.className = 'flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-sm transition shadow-sm';
+      } else {
+          iconDiv.className = 'w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center text-3xl mb-4';
+          iconEl.className = 'fa-solid fa-circle-question';
+          btnOk.className = 'flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition shadow-sm';
+      }
+      
+      confirmCallback = onConfirm;
+      document.getElementById('customConfirmModal').classList.remove('hidden');
+    }
+
+    function executeConfirm() {
+      if(confirmCallback) confirmCallback();
+      closeConfirmModal();
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('customConfirmModal').classList.add('hidden');
+      confirmCallback = null;
+    }
+
+    // 3. LOADERS PARA BOTONES Y GLOBAL
+    function toggleBtnLoading(btnId, isLoading) {
+      const btn = document.getElementById(btnId);
+      const spin = document.getElementById(btnId + 'Spin');
+      if(!btn) return;
+      
+      if(isLoading) {
+          btn.disabled = true;
+          btn.classList.add('opacity-75', 'cursor-not-allowed');
+          if(spin) spin.classList.remove('hidden');
+      } else {
+          btn.disabled = false;
+          btn.classList.remove('opacity-75', 'cursor-not-allowed');
+          if(spin) spin.classList.add('hidden');
+      }
+    }
+
 
     /* ========== TEMA OSCURO ========== */
     function toggleTheme() {
@@ -539,53 +759,32 @@
       } else {
         html.classList.add('dark'); localStorage.theme = 'dark';
       }
-      if (chartStock || chartPie) renderCharts();
+      if (chart1 || chart2) renderCharts();
     }
 
-    // Inicializar tema guardado al cargar
     if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
     }
 
-    /* ========== UI ALERTAS ========== */
-    function showAppAlert(msg, type = 'info') {
-      alert(msg); // Usamos el nativo por simplicidad si no está el modal superior o para alertas rápidas de formulario
-    }
-
     /* ========== MANEJO DEL LOGIN ========== */
     function submitLogin() {
-      const email = document.getElementById('logEmail').value;
-      const pass = document.getElementById('logPass').value;
-      const btnSpin = document.getElementById('btnLogSpin');
-      const btnText = document.getElementById('btnLogText');
-      const btnLog = document.getElementById('btnLog');
-
-      btnSpin.classList.remove('hidden');
-      btnText.classList.add('hidden');
-      btnLog.disabled = true;
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPassword').value;
+      
+      toggleBtnLoading('loginBtn', true);
       
       if(typeof google !== 'undefined') {
         google.script.run.withSuccessHandler(res => {
-          btnSpin.classList.add('hidden');
-          btnText.classList.remove('hidden');
-          btnLog.disabled = false;
+          toggleBtnLoading('loginBtn', false);
           
-          if(!res) { showAppAlert('Error de red. Intenta de nuevo.', 'error'); return; }
-          if(res.success) initApp(res.user); 
-          else showAppAlert(res.message, 'error');
+          if(!res) { showToast('Error de red. Intenta de nuevo.', 'error'); return; }
+          if(res.success) { showToast('Bienvenido a KardexPro', 'success'); initApp(res.user); }
+          else showToast(res.message, 'error');
         }).withFailureHandler(err => {
-          btnSpin.classList.add('hidden');
-          btnText.classList.remove('hidden');
-          btnLog.disabled = false;
-          showAppAlert('Error: ' + err.message, 'error');
+          toggleBtnLoading('loginBtn', false);
+          showToast('Error: ' + err.message, 'error');
         }).handleLogin({email: email, password: pass});
       }
-    }
-
-    function togglePasswordVisibility(inputId, btn) {
-      const input = document.getElementById(inputId), icon = btn.querySelector('i');
-      if (input.type === 'password') { input.type = 'text'; icon.className = 'fa-regular fa-eye-slash'; }
-      else { input.type = 'password'; icon.className = 'fa-regular fa-eye'; }
     }
 
     function initApp(user) {
@@ -601,7 +800,7 @@
       document.getElementById('movFecha').valueAsDate = new Date();
       
       saveSession(user);
-      syncData();
+      syncData(true); // silent load upon first open
     }
 
     function saveSession(user) {
@@ -615,7 +814,7 @@
       if(inactivityInterval) clearInterval(inactivityInterval);
       document.getElementById('appContainer').classList.add('hidden');
       document.getElementById('loginView').classList.remove('hidden');
-      document.getElementById('logPass').value = '';
+      document.getElementById('loginPassword').value = '';
     }
 
     function startInactivityTimer() {
@@ -628,7 +827,7 @@
       if(inactivityInterval) clearInterval(inactivityInterval);
       inactivityInterval = setInterval(() => {
         let session = localStorage.getItem(SESSION_KEY);
-        if (session) { let data = JSON.parse(session); if (Date.now() - data.lastActive > TIMEOUT_MS) { alert("Sesión cerrada por inactividad."); logout(); } }
+        if (session) { let data = JSON.parse(session); if (Date.now() - data.lastActive > TIMEOUT_MS) { showToast("Sesión cerrada por inactividad.", "warning"); logout(); } }
       }, 60000); 
     }
 
@@ -640,7 +839,7 @@
     /* ========== NAVEGACIÓN Y CARGA ========== */
     function switchTab(tabId) {
       if (['usuarios', 'logs'].includes(tabId) && currentUser && currentUser.role !== 'Admin') {
-        alert("Acceso denegado. Se requiere rol de Administrador.");
+        showToast("Acceso denegado. Se requiere rol de Administrador.", "error");
         return;
       }
       
@@ -653,6 +852,10 @@
       const targetContent = document.getElementById(tabId + 'Tab');
       if (targetContent) targetContent.classList.remove('hidden');
 
+      if(tabId === 'facturas' && document.getElementById('facturaDetailSection')) {
+          closeFacturaDetails();
+      }
+
       const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
       if (activeBtn) {
         activeBtn.classList.remove('text-gray-600', 'dark:text-gray-300', 'hover:bg-gray-50', 'dark:hover:bg-gray-700');
@@ -661,23 +864,24 @@
       }
     }
 
-    function syncData() {
+    function syncData(silent = false) {
       if(typeof google !== 'undefined' && currentUser) {
-        // Reiniciamos todas las páginas a 1 cuando refrescamos datos desde la BD
-        currentPageKardex = 1;
-        currentPageProducts = 1;
-        currentPageClients = 1;
-        currentPageUsers = 1;
-        currentPageLogs = 1;
+        
+        if(!silent) document.getElementById('globalLoaderOverlay').classList.remove('hidden');
+
+        currentPageKardex = 1; currentPageProducts = 1; currentPageClients = 1; currentPageUsers = 1; currentPageLogs = 1; currentPageFacturas = 1;
         
         google.script.run.withSuccessHandler(res => {
-          if(!res || !res.success) { showAppAlert(res ? res.message : 'Error cargando datos.', 'error'); return; }
+          if(!silent) document.getElementById('globalLoaderOverlay').classList.add('hidden');
+
+          if(!res || !res.success) { showToast(res ? res.message : 'Error cargando datos.', 'error'); return; }
           globalProducts = res.products || []; 
           globalClients = res.clients || []; 
           globalKardex = res.kardex || [];
           globalUsers = res.users || []; 
           globalRoles = res.roles || []; 
           globalLogs = res.logs || [];
+          globalFacturas = res.facturas || [];
           
           populateSelects(); 
           renderKardexTable(); 
@@ -686,7 +890,13 @@
           renderClientsTable();
           renderUsersTable(); 
           renderLogsTable();
-        }).withFailureHandler(err => showAppAlert('Error de red: ' + err.message, 'error')).getAppData(currentUser.email);
+          renderFacturasTable();
+
+          if(!silent) showToast("Datos sincronizados correctamente", "success");
+        }).withFailureHandler(err => {
+          if(!silent) document.getElementById('globalLoaderOverlay').classList.add('hidden');
+          showToast('Error de red: ' + err.message, 'error')
+        }).getAppData(currentUser.email);
       }
     }
 
@@ -718,11 +928,13 @@
       else if (type === 'Clients') { currentPageClients = newPage; renderClientsTable(); }
       else if (type === 'Users') { currentPageUsers = newPage; renderUsersTable(); }
       else if (type === 'Logs') { currentPageLogs = newPage; renderLogsTable(); }
+      else if (type === 'Facturas') { currentPageFacturas = newPage; renderFacturasTable(); }
     }
 
     function populateSelects() {
       const selProd = document.getElementById('movProducto'), selCli = document.getElementById('movCliente');
       const selFil = document.getElementById('kardexFilter'), selRole = document.getElementById('newUserRole');
+      const selFac = document.getElementById('movFactura'), selFacF = document.getElementById('newFacCliente');
       
       selProd.innerHTML = '<option value="" disabled selected>Selecciona un producto...</option>';
       selFil.innerHTML = '<option value="ALL">Todos los Productos</option>';
@@ -737,6 +949,18 @@
       if(selRole) { 
         selRole.innerHTML = '<option value="" disabled selected>Selecciona un rol...</option>'; 
         globalRoles.filter(r => r.estado !== 'Inactivo').forEach(r => { selRole.innerHTML += `<option value="${r.nombre}">${r.nombre}</option>`; }); 
+      }
+
+      if(selFac) {
+        selFac.innerHTML = '<option value="">Sin factura (Opcional)</option>';
+        globalFacturas.filter(f => f.estado !== 'Anulada').forEach(f => {
+          selFac.innerHTML += `<option value="${f.id}">#${f.numero} - ${f.descripcion}</option>`;
+        });
+      }
+      
+      if(selFacF) {
+        selFacF.innerHTML = '<option value="">Ninguno</option>';
+        globalClients.filter(c => c.estado !== 'Inactivo').forEach(c => { selFacF.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`; });
       }
     }
 
@@ -755,58 +979,247 @@
       const cUnitarInput = document.getElementById('movCUnitar'), cTotalInput = document.getElementById('movCTotal');
       const c_unitar_val = parseFloat(cUnitarInput.dataset.raw || cUnitarInput.value) || 0;
       const c_total_val = parseFloat(cTotalInput.dataset.raw) || 0;
+      const facturaId = document.getElementById('movFactura').value;
 
-      const data = { tipo: tipo, fecha: document.getElementById('movFecha').value, prodId: document.getElementById('movProducto').value, cliente: document.getElementById('movCliente').value, unds: document.getElementById('movUnds').value, c_unitar: c_unitar_val, c_total: c_total_val, userEmail: currentUser.email };
+      const data = { tipo: tipo, fecha: document.getElementById('movFecha').value, prodId: document.getElementById('movProducto').value, cliente: document.getElementById('movCliente').value, unds: document.getElementById('movUnds').value, c_unitar: c_unitar_val, c_total: c_total_val, userEmail: currentUser.email, facturaId: facturaId };
 
-      if(data.unds <= 0 || data.c_unitar <= 0) { showAppAlert('Valores deben ser mayor a cero.', 'error'); return; }
+      if(data.unds <= 0 || data.c_unitar <= 0) { showToast('Valores deben ser mayor a cero.', 'warning'); return; }
 
-      document.getElementById('btnMov').disabled = true;
+      toggleBtnLoading('btnMov', true);
+      
       if(typeof google !== 'undefined') {
         google.script.run.withSuccessHandler(res => {
-          document.getElementById('btnMov').disabled = false;
-          if(res.success) { showAppAlert('Guardado exitosamente.', 'success'); document.getElementById('movForm').reset(); document.getElementById('movCUnitar').dataset.raw = ''; document.getElementById('movCTotal').dataset.raw = ''; syncData(); switchTab('kardex'); } else { showAppAlert(res.message, 'error'); }
-        }).withFailureHandler(err => { document.getElementById('btnMov').disabled = false; showAppAlert('Error de red', 'error'); }).saveMovement(data);
+          toggleBtnLoading('btnMov', false);
+          if(res.success) { 
+              showToast('Movimiento registrado exitosamente.', 'success'); 
+              document.getElementById('movForm').reset(); 
+              document.getElementById('movCUnitar').dataset.raw = ''; 
+              document.getElementById('movCTotal').dataset.raw = ''; 
+              syncData(true); 
+              switchTab('kardex'); 
+          } else { 
+              showToast(res.message, 'error'); 
+          }
+        }).withFailureHandler(err => { 
+            toggleBtnLoading('btnMov', false); 
+            showToast('Error de red al guardar movimiento', 'error'); 
+        }).saveMovement(data);
       }
     }
 
     /* ========== GESTIÓN DE PRODUCTOS Y CLIENTES ========== */
     function submitNewProduct() {
       const data = { id: document.getElementById('newProdId').value.trim(), nombre: document.getElementById('newProdName').value.trim(), descripcion: document.getElementById('newProdDesc').value.trim(), userEmail: currentUser.email };
-      document.getElementById('btnNewProd').disabled = true;
+      
+      toggleBtnLoading('btnNewProd', true);
+      
       if(typeof google !== 'undefined') {
-        const runner = google.script.run.withSuccessHandler(res => { document.getElementById('btnNewProd').disabled = false; if(res.success) { showAppAlert(res.message, 'success'); cancelEditProduct(); syncData(); } else showAppAlert(res.message, 'error'); }).withFailureHandler(err => { document.getElementById('btnNewProd').disabled = false; showAppAlert('Error de red', 'error'); });
+        const runner = google.script.run.withSuccessHandler(res => { 
+            toggleBtnLoading('btnNewProd', false); 
+            if(res.success) { showToast(res.message, 'success'); cancelEditProduct(); syncData(true); } 
+            else showToast(res.message, 'error'); 
+        }).withFailureHandler(err => { 
+            toggleBtnLoading('btnNewProd', false); 
+            showToast('Error de red', 'error'); 
+        });
         isEditingProduct ? runner.updateProduct(data) : runner.saveProduct(data);
       }
     }
+    
     function editProduct(id) { const p = globalProducts.find(x => x.id === id); if(!p) return; isEditingProduct = true; document.getElementById('newProdId').value = p.id; document.getElementById('newProdId').disabled = true; document.getElementById('newProdName').value = p.nombre; document.getElementById('newProdDesc').value = p.desc; document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-indigo-500"></i>Editar Producto`; document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`; document.getElementById('btnCancelProd').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    
     function cancelEditProduct() { isEditingProduct = false; document.getElementById('prodForm').reset(); document.getElementById('newProdId').disabled = false; document.getElementById('titleProdForm').innerHTML = `<i class="fa-solid fa-box-open mr-2 text-indigo-500"></i>Registrar Producto`; document.getElementById('btnNewProdText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar`; document.getElementById('btnCancelProd').classList.add('hidden'); }
-    function deleteProduct(id) { if(!confirm('¿Ocultar este producto?')) return; if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success) { syncData(); } }).deleteProduct(id, currentUser.email); } }
+    
+    function deleteProduct(id) { 
+      showConfirmModal('¿Ocultar este producto?', 'El producto ya no aparecerá en los listados, pero su histórico se conservará.', () => {
+         document.getElementById('globalLoaderOverlay').classList.remove('hidden');
+         if(typeof google !== 'undefined') { 
+            google.script.run.withSuccessHandler(res => { 
+                document.getElementById('globalLoaderOverlay').classList.add('hidden');
+                if(res.success) { showToast(res.message, 'success'); syncData(true); } else showToast(res.message, 'error');
+            }).deleteProduct(id, currentUser.email); 
+         }
+      }, true);
+    }
 
     function submitNewClient() {
       const data = { id: document.getElementById('newCliId').value.trim(), nombre: document.getElementById('newCliName').value.trim(), contacto: document.getElementById('newCliContact').value.trim(), userEmail: currentUser.email };
-      document.getElementById('btnNewCli').disabled = true;
+      
+      toggleBtnLoading('btnNewCli', true);
+      
       if(typeof google !== 'undefined') {
-        const runner = google.script.run.withSuccessHandler(res => { document.getElementById('btnNewCli').disabled = false; if(res.success) { showAppAlert(res.message, 'success'); cancelEditClient(); syncData(); } else showAppAlert(res.message, 'error'); }).withFailureHandler(err => { document.getElementById('btnNewCli').disabled = false; showAppAlert('Error de red', 'error'); });
+        const runner = google.script.run.withSuccessHandler(res => { 
+            toggleBtnLoading('btnNewCli', false); 
+            if(res.success) { showToast(res.message, 'success'); cancelEditClient(); syncData(true); } 
+            else showToast(res.message, 'error'); 
+        }).withFailureHandler(err => { 
+            toggleBtnLoading('btnNewCli', false); 
+            showToast('Error de red', 'error'); 
+        });
         isEditingClient ? runner.updateClient(data) : runner.saveClient(data);
       }
     }
+    
     function editClient(id) { const c = globalClients.find(x => x.id === id); if(!c) return; isEditingClient = true; document.getElementById('newCliId').value = c.id; document.getElementById('newCliId').disabled = true; document.getElementById('newCliName').value = c.nombre; document.getElementById('newCliContact').value = c.contacto; document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-indigo-500"></i>Editar Cliente`; document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`; document.getElementById('btnCancelCli').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    
     function cancelEditClient() { isEditingClient = false; document.getElementById('cliForm').reset(); document.getElementById('newCliId').disabled = false; document.getElementById('titleCliForm').innerHTML = `<i class="fa-solid fa-address-book mr-2 text-indigo-500"></i>Registrar Cliente`; document.getElementById('btnNewCliText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar`; document.getElementById('btnCancelCli').classList.add('hidden'); }
-    function deleteClient(id) { if(!confirm('¿Ocultar este cliente?')) return; if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success) { syncData(); } }).deleteClient(id, currentUser.email); } }
+    
+    function deleteClient(id) { 
+      showConfirmModal('¿Ocultar este cliente?', 'No aparecerá en el desplegable para nuevos registros, pero conservará su historial.', () => {
+         document.getElementById('globalLoaderOverlay').classList.remove('hidden');
+         if(typeof google !== 'undefined') { 
+            google.script.run.withSuccessHandler(res => { 
+                document.getElementById('globalLoaderOverlay').classList.add('hidden');
+                if(res.success) { showToast(res.message, 'success'); syncData(true); } else showToast(res.message, 'error');
+            }).deleteClient(id, currentUser.email); 
+         }
+      }, true);
+    }
 
     /* ========== GESTIÓN DE USUARIOS ========== */
     function submitNewUser() {
       const data = { id: currentEditUserId, nombre: document.getElementById('newUserName').value.trim(), email: document.getElementById('newUserEmail').value.trim(), password: document.getElementById('newUserPass').value, rol: document.getElementById('newUserRole').value, userEmail: currentUser.email };
-      document.getElementById('btnNewUser').disabled = true;
+      
+      toggleBtnLoading('btnNewUser', true);
+      
       if(typeof google !== 'undefined') {
-        const runner = google.script.run.withSuccessHandler(res => { document.getElementById('btnNewUser').disabled = false; if(res.success){ showAppAlert(res.message, 'success'); cancelEditUser(); syncData(); } else { showAppAlert(res.message, 'error'); } }).withFailureHandler(err => { document.getElementById('btnNewUser').disabled = false; showAppAlert('Error de red', 'error'); });
+        const runner = google.script.run.withSuccessHandler(res => { 
+            toggleBtnLoading('btnNewUser', false); 
+            if(res.success){ showToast(res.message, 'success'); cancelEditUser(); syncData(true); } 
+            else { showToast(res.message, 'error'); } 
+        }).withFailureHandler(err => { 
+            toggleBtnLoading('btnNewUser', false); 
+            showToast('Error de red', 'error'); 
+        });
         isEditingUser ? runner.updateUser(data) : runner.saveUser(data);
       }
     }
-    function editUser(id) { const u = globalUsers.find(x => x.id === id); if(!u) return; isEditingUser = true; currentEditUserId = id; document.getElementById('newUserName').value = u.nombre; document.getElementById('newUserEmail').value = u.email; document.getElementById('newUserRole').value = u.rol; const passField = document.getElementById('newUserPass'); passField.value = ''; passField.placeholder = 'Dejar en blanco para no cambiar'; passField.required = false; document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-user-pen mr-2 text-purple-500"></i>Editar Usuario`; document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`; document.getElementById('btnCancelUser').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    function cancelEditUser() { isEditingUser = false; currentEditUserId = null; document.getElementById('userForm').reset(); const passField = document.getElementById('newUserPass'); passField.placeholder = '••••••••'; passField.required = true; document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-users-cog mr-2 text-purple-500"></i>Gestión de Accesos`; document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Crear Cuenta`; document.getElementById('btnCancelUser').classList.add('hidden'); }
-    function deleteUser(id) { if(!confirm('¿Desactivar este usuario?')) return; if(typeof google !== 'undefined') { google.script.run.withSuccessHandler(res => { if(res.success){ syncData(); } }).deleteUser(id, currentUser.email); } }
     
+    function editUser(id) { const u = globalUsers.find(x => x.id === id); if(!u) return; isEditingUser = true; currentEditUserId = id; document.getElementById('newUserName').value = u.nombre; document.getElementById('newUserEmail').value = u.email; document.getElementById('newUserRole').value = u.rol; const passField = document.getElementById('newUserPass'); passField.value = ''; passField.placeholder = 'Dejar en blanco para no cambiar'; passField.required = false; document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-user-pen mr-2 text-purple-500"></i>Editar Usuario`; document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`; document.getElementById('btnCancelUser').classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    
+    function cancelEditUser() { isEditingUser = false; currentEditUserId = null; document.getElementById('userForm').reset(); const passField = document.getElementById('newUserPass'); passField.placeholder = '••••••••'; passField.required = true; document.getElementById('titleUserForm').innerHTML = `<i class="fa-solid fa-users-cog mr-2 text-purple-500"></i>Gestión de Accesos`; document.getElementById('btnNewUserText').innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i>Crear Cuenta`; document.getElementById('btnCancelUser').classList.add('hidden'); }
+    
+    function deleteUser(id) { 
+      showConfirmModal('¿Desactivar usuario?', 'El usuario perderá inmediatamente el acceso al sistema.', () => {
+         document.getElementById('globalLoaderOverlay').classList.remove('hidden');
+         if(typeof google !== 'undefined') { 
+            google.script.run.withSuccessHandler(res => { 
+                document.getElementById('globalLoaderOverlay').classList.add('hidden');
+                if(res.success){ showToast(res.message, 'success'); syncData(true); } else showToast(res.message, 'error');
+            }).deleteUser(id, currentUser.email); 
+         }
+      }, true);
+    }
+
+    /* ========== GESTIÓN DE FACTURAS ========== */
+    function submitNewFactura() {
+      const data = { id: currentFacturaId, numero: document.getElementById('newFacNum').value.trim(), fecha: document.getElementById('newFacFecha').value, descripcion: document.getElementById('newFacDesc').value.trim(), cliente: document.getElementById('newFacCliente').value, observacion: document.getElementById('newFacObs').value.trim(), userEmail: currentUser.email };
+      
+      toggleBtnLoading('btnNewFac', true);
+      
+      if(typeof google !== 'undefined') {
+        const runner = google.script.run.withSuccessHandler(res => { 
+          toggleBtnLoading('btnNewFac', false); 
+          if(res.success) { showToast(res.message, 'success'); cancelEditFactura(); syncData(true); } 
+          else showToast(res.message, 'error'); 
+        }).withFailureHandler(err => { 
+            toggleBtnLoading('btnNewFac', false); 
+            showToast('Error de red', 'error'); 
+        });
+        isEditingFactura ? runner.updateFactura(data) : runner.saveFactura(data);
+      }
+    }
+    
+    function editFactura(id) { 
+      const f = globalFacturas.find(x => x.id === id); if(!f) return; 
+      isEditingFactura = true; currentFacturaId = id; 
+      document.getElementById('newFacNum').value = f.numero; 
+      document.getElementById('newFacNum').disabled = true; 
+      document.getElementById('newFacFecha').value = f.fecha.split('T')[0]; 
+      document.getElementById('newFacCliente').value = f.cliente; 
+      document.getElementById('newFacDesc').value = f.descripcion; 
+      document.getElementById('newFacObs').value = f.observacion; 
+      document.getElementById('titleFacForm').innerHTML = `<i class="fa-solid fa-pen mr-2 text-emerald-500"></i>Editar Factura`; 
+      document.getElementById('btnNewFacText').innerHTML = `<i class="fa-solid fa-save mr-2"></i>Actualizar`; 
+      document.getElementById('btnCancelFac').classList.remove('hidden'); 
+      window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    }
+    
+    function cancelEditFactura() { 
+      isEditingFactura = false; currentFacturaId = null; 
+      document.getElementById('facForm').reset(); 
+      document.getElementById('newFacNum').disabled = false; 
+      document.getElementById('titleFacForm').innerHTML = `<i class="fa-solid fa-file-invoice-dollar mr-2 text-emerald-500"></i>Registrar Factura`; 
+      document.getElementById('btnNewFacText').innerHTML = `<i class="fa-solid fa-plus mr-2"></i>Guardar Factura`; 
+      document.getElementById('btnCancelFac').classList.add('hidden'); 
+    }
+    
+    function deleteFactura(id) { 
+      showConfirmModal('¿Anular Factura?', 'La factura cambiará a estado anulado, pero sus movimientos en el Kardex se conservarán intactos por seguridad.', () => {
+         document.getElementById('globalLoaderOverlay').classList.remove('hidden');
+         if(typeof google !== 'undefined') { 
+            google.script.run.withSuccessHandler(res => { 
+              document.getElementById('globalLoaderOverlay').classList.add('hidden');
+              if(res.success) { showToast(res.message, 'success'); syncData(true); } else { showToast(res.message, 'error'); } 
+            }).deleteFactura(id, currentUser.email); 
+         }
+      }, true); 
+    }
+
+    function viewFacturaDetails(id) {
+      const f = globalFacturas.find(x => x.id === id); if(!f) return;
+      document.getElementById('facturasMainSection').classList.add('hidden');
+      document.getElementById('facturaDetailSection').classList.remove('hidden');
+      
+      document.getElementById('detFacNum').textContent = f.numero;
+      document.getElementById('detFacFecha').textContent = new Date(f.fecha).toLocaleDateString();
+      document.getElementById('detFacCliente').textContent = f.cliente || '-';
+      document.getElementById('detFacDesc').textContent = f.descripcion;
+      
+      const elEst = document.getElementById('detFacEstado');
+      elEst.textContent = f.estado;
+      elEst.className = f.estado === 'Activa' ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'font-bold text-red-600 dark:text-red-400';
+
+      const movs = globalKardex.filter(m => m.facturaId === id);
+      let tIn = 0, tOut = 0;
+      const tbody = document.getElementById('detFacMovsBody'); tbody.innerHTML = '';
+      
+      if(movs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">No hay movimientos asociados.</td></tr>';
+      } else {
+        movs.forEach(m => {
+          const isEn = m.tipo === 'Entrada';
+          if(isEn) tIn += m.c_total; else tOut += m.c_total;
+          const badge = isEn ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">Entrada</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">Salida</span>';
+          tbody.innerHTML += `<tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"><td class="px-4 py-3 font-mono text-xs">${new Date(m.fecha).toLocaleDateString()}</td><td class="px-4 py-3">${badge}</td><td class="px-4 py-3 font-bold text-sm">${m.prodNombre}</td><td class="px-4 py-3 text-right">${m.unds}</td><td class="px-4 py-3 text-right font-bold font-mono">${fmt.format(m.c_total)}</td></tr>`;
+        });
+      }
+      
+      document.getElementById('detFacTotalIn').textContent = fmt.format(tIn);
+      document.getElementById('detFacTotalOut').textContent = fmt.format(tOut);
+      document.getElementById('detFacBalance').textContent = fmt.format(Math.abs(tIn - tOut));
+      
+      const btnAdd = document.getElementById('btnFacAddMov');
+      if(f.estado === 'Anulada') { btnAdd.classList.add('hidden'); } 
+      else { btnAdd.classList.remove('hidden'); btnAdd.onclick = () => addMovementFromFactura(f.id, f.cliente); }
+    }
+    
+    function closeFacturaDetails() {
+      document.getElementById('facturasMainSection').classList.remove('hidden');
+      document.getElementById('facturaDetailSection').classList.add('hidden');
+    }
+    
+    function addMovementFromFactura(factId, cliente) {
+      switchTab('movimiento');
+      document.getElementById('movFactura').value = factId;
+      if(cliente) {
+        const selCli = document.getElementById('movCliente');
+        for(let i=0; i<selCli.options.length; i++) {
+          if(selCli.options[i].value === cliente) { selCli.selectedIndex = i; break; }
+        }
+      }
+    }
+
     /* ========== RENDERIZADO TABLAS Y GRAFICAS ========== */
     function renderKardexTable() {
       const tbody = document.getElementById('kardexTableBody'), filter = document.getElementById('kardexFilter').value; tbody.innerHTML = '';
@@ -820,16 +1233,40 @@
       else {
         slicedData.forEach(row => {
           const e = row.tipo === 'Entrada', s = row.tipo === 'Salida';
-          // Para evitar fechas inválidas, verificamos el parseo
           const dFechaObj = new Date(row.fecha);
           const dFecha = isNaN(dFechaObj) ? row.fecha : dFechaObj.toLocaleDateString();
           
-          // Cambios de colores: emerald, rose e indigo
           const badgeClass = e ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300';
           tbody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700 text-center"><td class="px-3 py-3 text-left font-mono whitespace-nowrap border-r border-gray-200 dark:border-gray-700">${dFecha}</td><td class="px-3 py-3 text-left font-bold border-r border-gray-200 dark:border-gray-700">${row.prodNombre}</td><td class="px-3 py-3 text-left border-r border-gray-200 dark:border-gray-700">${row.cliente} <br><span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${badgeClass}">${row.tipo}</span></td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 ${e?'font-bold text-emerald-600 dark:text-emerald-400':''} border-l border-emerald-100 dark:border-emerald-800/30">${e? row.unds : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10">${e? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-emerald-50/50 dark:bg-emerald-900/10 border-r border-emerald-100 dark:border-emerald-800/30 font-bold">${e? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10 ${s?'font-bold text-rose-600 dark:text-rose-400':''}">${s? row.unds : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10">${s? fmt.format(row.c_unitar) : ''}</td><td class="px-3 py-3 bg-rose-50/50 dark:bg-rose-900/10 border-r border-rose-100 dark:border-rose-800/30 font-bold">${s? fmt.format(row.c_total) : ''}</td><td class="px-3 py-3 font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-50/50 dark:bg-indigo-900/10">${parseFloat(row.saldo_unds).toFixed(2)}</td><td class="px-3 py-3 bg-indigo-50/50 dark:bg-indigo-900/10">${fmt.format(row.saldo_c_unitar)}</td><td class="px-3 py-3 font-bold text-indigo-800 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/10">${fmt.format(row.saldo_c_total)}</td></tr>`;
         });
       }
       renderPaginationControls('paginationKardex', 'Kardex', currentPageKardex, totalPages);
+    }
+
+    function renderFacturasTable() {
+      const tbody = document.getElementById('tableFacturasBody'); tbody.innerHTML = '';
+      
+      const totalPages = Math.ceil(globalFacturas.length / ITEMS_PER_PAGE);
+      if (currentPageFacturas > totalPages && totalPages > 0) currentPageFacturas = totalPages;
+      const slicedData = globalFacturas.slice((currentPageFacturas - 1) * ITEMS_PER_PAGE, currentPageFacturas * ITEMS_PER_PAGE);
+
+      if(slicedData.length === 0) tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-500">No hay facturas registradas.</td></tr>`;
+      slicedData.forEach(f => {
+        const stBadge = f.estado === 'Activa' ? '<span class="px-2 py-1 text-[10px] rounded font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">Activa</span>' : '<span class="px-2 py-1 text-[10px] rounded font-bold uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400">Anulada</span>';
+        tbody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+          <td class="px-4 py-3 font-bold font-mono text-blue-600 dark:text-blue-400 cursor-pointer hover:underline" onclick="viewFacturaDetails('${f.id}')">${f.numero}</td>
+          <td class="px-4 py-3 font-mono text-xs">${new Date(f.fecha).toLocaleDateString()}</td>
+          <td class="px-4 py-3">${f.cliente || '-'}</td>
+          <td class="px-4 py-3 truncate max-w-[200px]">${f.descripcion}</td>
+          <td class="px-4 py-3 text-center">${stBadge}</td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button onclick="viewFacturaDetails('${f.id}')" title="Ver Detalle" class="text-blue-500 hover:text-blue-700 p-1.5"><i class="fa-solid fa-eye"></i></button>
+            <button onclick="editFactura('${f.id}')" title="Editar" class="text-emerald-500 hover:text-emerald-700 p-1.5"><i class="fa-solid fa-pen"></i></button>
+            ${f.estado === 'Activa' ? `<button onclick="deleteFactura('${f.id}')" title="Anular" class="text-rose-500 hover:text-rose-700 p-1.5"><i class="fa-solid fa-ban"></i></button>` : ''}
+          </td>
+        </tr>`; 
+      });
+      renderPaginationControls('paginationFacturas', 'Facturas', currentPageFacturas, totalPages);
     }
 
     function renderProductsTable() {
@@ -841,7 +1278,7 @@
       const slicedData = filtered.slice((currentPageProducts - 1) * ITEMS_PER_PAGE, currentPageProducts * ITEMS_PER_PAGE);
 
       if(slicedData.length === 0) pBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-500">No hay productos.</td></tr>`;
-      slicedData.forEach(p => { pBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-mono text-xs">${p.id}</td><td class="px-4 py-3 font-bold">${p.nombre}</td><td class="px-4 py-3 truncate max-w-xs">${p.desc || '-'}</td><td class="px-4 py-3 text-center space-x-2"><button onclick="editProduct('${p.id}')" class="text-blue-500 hover:text-blue-700 p-1.5"><i class="fa-solid fa-pen"></i></button><button onclick="deleteProduct('${p.id}')" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+      slicedData.forEach(p => { pBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-mono text-xs">${p.id}</td><td class="px-4 py-3 font-bold">${p.nombre}</td><td class="px-4 py-3 truncate max-w-xs">${p.desc || '-'}</td><td class="px-4 py-3 text-center space-x-2"><button onclick="editProduct('${p.id}')" class="text-blue-500 hover:text-blue-700 p-1.5"><i class="fa-solid fa-pen"></i></button><button onclick="deleteProduct('${p.id}')" class="text-rose-500 hover:text-rose-700 p-1.5"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
       
       renderPaginationControls('paginationProducts', 'Products', currentPageProducts, totalPages);
     }
@@ -855,7 +1292,7 @@
       const slicedData = filtered.slice((currentPageClients - 1) * ITEMS_PER_PAGE, currentPageClients * ITEMS_PER_PAGE);
 
       if(slicedData.length === 0) cBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-500">No hay clientes.</td></tr>`;
-      slicedData.forEach(c => { cBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-mono text-xs">${c.id}</td><td class="px-4 py-3 font-bold">${c.nombre}</td><td class="px-4 py-3">${c.contacto || '-'}</td><td class="px-4 py-3 text-center space-x-2"><button onclick="editClient('${c.id}')" class="text-indigo-500 hover:text-indigo-700 p-1.5"><i class="fa-solid fa-pen"></i></button><button onclick="deleteClient('${c.id}')" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
+      slicedData.forEach(c => { cBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-mono text-xs">${c.id}</td><td class="px-4 py-3 font-bold">${c.nombre}</td><td class="px-4 py-3">${c.contacto || '-'}</td><td class="px-4 py-3 text-center space-x-2"><button onclick="editClient('${c.id}')" class="text-indigo-500 hover:text-indigo-700 p-1.5"><i class="fa-solid fa-pen"></i></button><button onclick="deleteClient('${c.id}')" class="text-rose-500 hover:text-rose-700 p-1.5"><i class="fa-solid fa-trash"></i></button></td></tr>`; });
       
       renderPaginationControls('paginationClients', 'Clients', currentPageClients, totalPages);
     }
@@ -869,7 +1306,7 @@
       const slicedData = filtered.slice((currentPageUsers - 1) * ITEMS_PER_PAGE, currentPageUsers * ITEMS_PER_PAGE);
 
       if(slicedData.length === 0) uBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-500">No hay usuarios.</td></tr>`;
-      slicedData.forEach(u => { uBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-bold">${u.nombre}</td><td class="px-4 py-3 text-sm">${u.email}</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] rounded font-bold uppercase bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">${u.rol}</span></td><td class="px-4 py-3 text-center space-x-2"><button onclick="editUser('${u.id}')" class="text-purple-500 hover:text-purple-700 p-1.5"><i class="fa-solid fa-pen"></i></button>${u.id !== currentUser.id ? `<button onclick="deleteUser('${u.id}')" class="text-red-500 hover:text-red-700 p-1.5"><i class="fa-solid fa-user-slash"></i></button>` : '<span class="text-xs text-gray-400 font-bold ml-1">Tú</span>'}</td></tr>`; });
+      slicedData.forEach(u => { uBody.innerHTML += `<tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700"><td class="px-4 py-3 font-bold">${u.nombre}</td><td class="px-4 py-3 text-sm">${u.email}</td><td class="px-4 py-3"><span class="px-2 py-1 text-[10px] rounded font-bold uppercase bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">${u.rol}</span></td><td class="px-4 py-3 text-center space-x-2"><button onclick="editUser('${u.id}')" class="text-purple-500 hover:text-purple-700 p-1.5"><i class="fa-solid fa-pen"></i></button>${u.id !== currentUser.id ? `<button onclick="deleteUser('${u.id}')" class="text-rose-500 hover:text-rose-700 p-1.5"><i class="fa-solid fa-user-slash"></i></button>` : '<span class="text-xs text-gray-400 font-bold ml-1">Tú</span>'}</td></tr>`; });
       
       renderPaginationControls('paginationUsers', 'Users', currentPageUsers, totalPages);
     }
@@ -926,11 +1363,11 @@
       let labels = sortedData.map(d => d.nombre), dataValor = sortedData.map(d => d.valor), dataUnds = sortedData.map(d => d.unds);
       const isDark = document.documentElement.classList.contains('dark'), textColor = isDark ? '#cbd5e1' : '#475569', gridColor = isDark ? '#334155' : '#e2e8f0';
 
-      if(chartStock) chartStock.destroy();
-      chartStock = new Chart(document.getElementById('barChart').getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Valor (COP)', data: dataValor, backgroundColor: 'rgba(59, 130, 246, 0.8)', borderColor: 'rgb(37, 99, 235)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } }, plugins: { legend: { labels: { color: textColor } } } } });
+      if(chart1) chart1.destroy();
+      chart1 = new Chart(document.getElementById('barChart').getContext('2d'), { type: 'bar', data: { labels: labels, datasets: [{ label: 'Valor (COP)', data: dataValor, backgroundColor: 'rgba(59, 130, 246, 0.8)', borderColor: 'rgb(37, 99, 235)', borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: textColor }, grid: { color: gridColor } }, y: { ticks: { color: textColor }, grid: { color: gridColor } } }, plugins: { legend: { labels: { color: textColor } } } } });
 
-      if(chartPie) chartPie.destroy();
-      chartPie = new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'doughnut', data: { labels: labels, datasets: [{ data: dataUnds, borderColor: isDark ? '#1e293b' : '#ffffff', backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#10b981', '#14b8a6', '#06b6d4', '#64748b'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11} } } } } });
+      if(chart2) chart2.destroy();
+      chart2 = new Chart(document.getElementById('pieChart').getContext('2d'), { type: 'doughnut', data: { labels: labels, datasets: [{ data: dataUnds, borderColor: isDark ? '#1e293b' : '#ffffff', backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#10b981', '#14b8a6', '#06b6d4', '#64748b'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, font: {size: 11} } } } } });
     }
   </script>
 </body>
